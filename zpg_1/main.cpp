@@ -1,4 +1,7 @@
-﻿//Include GLFW  
+﻿//Include GLEW
+#include <GL/glew.h>
+
+//Include GLFW  
 #include <GLFW/glfw3.h>  
 
 //Include GLM  
@@ -13,16 +16,59 @@
 #include <stdio.h>
 
 
-////Include GLEW
-//#include <GL/glew.h>
+struct Vertex {
+	float position[4]; // x, y, z, w
+	float color[4];    // r, g, b, a
+};
 
-float angle = 0.0f;
-float baseSpeed = 50.0f;
-float speedChanger = 1.0f;
-int rotatingDir = 1;
-bool rotateAroundCorner = false;
+const Vertex b[] = {
+	{0.0f, 0.5f, 0.0f ,1.f},{ 1, 1, 0, 1 },
+	{0.5f, -0.5f, 0.0, 1.f},{ 1, 1, 0, 1 },
+	{ -0.5f, -0.5f, 0.0f, 1.f },{ 1, 1, 0, 1 }
+};
 
-glm::vec3 rotateAxis(0.f, 0.f, 1.f);
+float points2[] = {
+   -0.5f, 0.5f, 0.0f,
+	0.5f, 0.5f, 0.0f,
+	-0.5f,  -0.5f, 0.0f,
+   0.5f,  0.5f, 0.0f,
+	-0.5f, -0.5f, 0.0f,
+	0.5f,  -0.5f, 0.0f
+};
+
+//const a b[] = {
+//   { { -.5f, -.5f, .5f, 1 }, { 1, 1, 0, 1 } },
+//   { { -.5f, .5f, .5f, 1 }, { 1, 0, 0, 1 } },
+//   { { .5f, .5f, .5f, 1 }, { 0, 0, 0, 1 } },
+//   { { .5f, -.5f, .5f, 1 }, { 0, 1, 0, 1 } },
+//};
+
+const char* vertex_shader =
+"#version 330\n"
+"layout(location=0) in vec3 vp;"
+"void main () {"
+"     gl_Position = vec4 (vp, 1.0);"
+"}";
+
+
+
+const char* fragment_shader =
+"#version 330\n"
+"out vec4 fragColor;"
+"void main () {"
+"     fragColor = vec4 (0.5, 0.5, 0, 1.0);"
+"}";
+
+
+//float angle = 0.0f;
+//float baseSpeed = 50.0f;
+//float speedChanger = 1.0f;
+//int rotatingDir = 1;
+//bool rotateAroundCorner = false;
+//
+//glm::vec3 rotateAxis(0.f, 0.f, 1.f);
+//
+//
 
 
 static void error_callback(int error, const char* description) { fputs(description, stderr); }
@@ -31,7 +77,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+	/*if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
 		rotatingDir *= -1;
 	if (key == GLFW_KEY_UP)
 	{
@@ -56,7 +102,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
 		rotateAroundCorner = !rotateAroundCorner;
-	printf("key_callback [%d,%d,%d,%d] \n", key, scancode, action, mods);
+	printf("key_callback [%d,%d,%d,%d] \n", key, scancode, action, mods);*/
 }
 
 static void window_focus_callback(GLFWwindow* window, int focused) { printf("window_focus_callback \n"); }
@@ -73,6 +119,7 @@ static void cursor_callback(GLFWwindow* window, double x, double y) { printf("cu
 static void button_callback(GLFWwindow* window, int button, int action, int mode) {
 	if (action == GLFW_PRESS) printf("button_callback [%d,%d,%d]\n", button, action, mode);
 }
+
 
 
 /*
@@ -96,30 +143,53 @@ int main(void)
 {
 	GLFWwindow* window;
 	glfwSetErrorCallback(error_callback);
-
-	if (!glfwInit())
+	if (!glfwInit()) {
+		fprintf(stderr, "ERROR: could not start GLFW3\n");
 		exit(EXIT_FAILURE);
-	window = glfwCreateWindow(640, 480, "ZPG", NULL, NULL);
-	if (!window)
-	{
+	}
+
+	/* //inicializace konkretni verze
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE,
+	GLFW_OPENGL_CORE_PROFILE);  //*/
+
+	window = glfwCreateWindow(800, 600, "ZPG", NULL, NULL);
+	if (!window) {
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
+
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
 
-	// Sets the key callback
-	glfwSetKeyCallback(window, key_callback);
+	// start GLEW extension handler
+	glewExperimental = GL_TRUE;
+	glewInit();
 
-	glfwSetCursorPosCallback(window, cursor_callback);
+	// get version info
+	printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
+	printf("Using GLEW %s\n", glewGetString(GLEW_VERSION));
+	printf("Vendor %s\n", glGetString(GL_VENDOR));
+	printf("Renderer %s\n", glGetString(GL_RENDERER));
+	printf("GLSL %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	int major, minor, revision;
+	glfwGetVersion(&major, &minor, &revision);
+	printf("Using GLFW %i.%i.%i\n", major, minor, revision);
 
-	glfwSetMouseButtonCallback(window, button_callback);
+	//// Sets the key callback
+	//glfwSetKeyCallback(window, key_callback);
 
-	glfwSetWindowFocusCallback(window, window_focus_callback);
+	//glfwSetCursorPosCallback(window, cursor_callback);
 
-	glfwSetWindowIconifyCallback(window, window_iconify_callback);
+	//glfwSetMouseButtonCallback(window, button_callback);
 
-	glfwSetWindowSizeCallback(window, window_size_callback);
+	//glfwSetWindowFocusCallback(window, window_focus_callback);
+
+	//glfwSetWindowIconifyCallback(window, window_iconify_callback);
+
+	//glfwSetWindowSizeCallback(window, window_size_callback);
 
 
 	int width, height;
@@ -128,63 +198,116 @@ int main(void)
 	glViewport(0, 0, width, height);
 
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+	//vertex buffer object (VBO)
+	GLuint VBO = 0;
+	glGenBuffers(1, &VBO); // generate the VBO
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(b), b, GL_STATIC_DRAW);
 
+	//Vertex Array Object (VAO)
+	GLuint VAO = 0;
+	glGenVertexArrays(1, &VAO); //generate the VAO
+	glBindVertexArray(VAO); //bind the VAO
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	glEnableVertexAttribArray(0); //enable vertex attributes
+
+	// color attribute
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(float) * 4));
+	glEnableVertexAttribArray(1);
+
+
+
+	//create and compile shaders
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertex_shader, NULL);
+	glCompileShader(vertexShader);
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragment_shader, NULL);
+	glCompileShader(fragmentShader);
+	GLuint shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, fragmentShader);
+	glAttachShader(shaderProgram, vertexShader);
+	glLinkProgram(shaderProgram);
+
+	GLint status;
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &status);
+	if (status == GL_FALSE)
+	{
+		GLint infoLogLength;
+		glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
+		GLchar* strInfoLog = new GLchar[infoLogLength + 1];
+		glGetProgramInfoLog(shaderProgram, infoLogLength, NULL, strInfoLog);
+		fprintf(stderr, "Linker failure: %s\n", strInfoLog);
+		delete[] strInfoLog;
+	}
 
 	while (!glfwWindowShouldClose(window))
 	{
-		glClear(GL_COLOR_BUFFER_BIT);
+		//glClear(GL_COLOR_BUFFER_BIT);
 
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+		//glMatrixMode(GL_MODELVIEW);
+		//glLoadIdentity();
 
-		static double lastTime = glfwGetTime();
-		double currentTime = glfwGetTime();
-		double deltaTime = currentTime - lastTime;
-		lastTime = currentTime;
-		angle += rotatingDir * (baseSpeed * speedChanger) * (float)deltaTime;
+		//static double lastTime = glfwGetTime();
+		//double currentTime = glfwGetTime();
+		//double deltaTime = currentTime - lastTime;
+		//lastTime = currentTime;
+		//angle += rotatingDir * (baseSpeed * speedChanger) * (float)deltaTime;
 
-		if (rotateAroundCorner)
-		{
-			glTranslatef(-0.6f, 0.6f, 0.f);
+		//if (rotateAroundCorner)
+		//{
+		//	glTranslatef(-0.6f, 0.6f, 0.f);
 
-			glRotatef(angle, rotateAxis.x, rotateAxis.y, rotateAxis.z);
+		//	glRotatef(angle, rotateAxis.x, rotateAxis.y, rotateAxis.z);
 
-			glTranslatef(-0.6f, 0.6f, 0.f);
+		//	glTranslatef(-0.6f, 0.6f, 0.f);
 
-		}
-		else
-		{
-			glRotatef(angle, rotateAxis.x, rotateAxis.y, rotateAxis.z);
-		}
+		//}
+		//else
+		//{
+		//	glRotatef(angle, rotateAxis.x, rotateAxis.y, rotateAxis.z);
+		//}
 
-		/*glBegin(GL_TRIANGLES);
-		glColor3f(1.f, 0.f, 0.f);
-		glVertex3f(-0.6f, -0.4f, 0.f);
-		glColor3f(0.f, 1.f, 0.f);
-		glVertex3f(0.6f, -0.4f, 0.f);
-		glColor3f(0.f, 0.f, 1.f);
-		glVertex3f(0.f, 0.6f, 0.f);
-		glEnd();*/
+		///*glBegin(GL_TRIANGLES);
+		//glColor3f(1.f, 0.f, 0.f);
+		//glVertex3f(-0.6f, -0.4f, 0.f);
+		//glColor3f(0.f, 1.f, 0.f);
+		//glVertex3f(0.6f, -0.4f, 0.f);
+		//glColor3f(0.f, 0.f, 1.f);
+		//glVertex3f(0.f, 0.6f, 0.f);
+		//glEnd();*/
 
-		glBegin(GL_QUADS);
-		glColor3f(1.f, 0.f, 0.f); // red
-		glVertex3f(-0.6f, 0.6f, 0.f); //levy vrchni
-		glColor3f(1.f, 1.f, 0.f); // zluta  ( R + G)
-		glVertex3f(0.6f, 0.6f, 0.f); //pravy vrchni
-		glColor3f(0.f, 1.f, 0.f); // green
-		glVertex3f(0.6f, -0.6f, 0.f); //pravy spodni
-		glColor3f(0.f, 0.f, 1.f); // modra
-		glVertex3f(-0.6f, -0.6f, 0.f); //levy spodni
-		glEnd();
+		//glBegin(GL_QUADS);
+		//glColor3f(1.f, 0.f, 0.f); // red
+		//glVertex3f(-0.6f, 0.6f, 0.f); //levy vrchni
+		//glColor3f(1.f, 1.f, 0.f); // zluta  ( R + G)
+		//glVertex3f(0.6f, 0.6f, 0.f); //pravy vrchni
+		//glColor3f(0.f, 1.f, 0.f); // green
+		//glVertex3f(0.6f, -0.6f, 0.f); //pravy spodni
+		//glColor3f(0.f, 0.f, 1.f); // modra
+		//glVertex3f(-0.6f, -0.6f, 0.f); //levy spodni
+		//glEnd();
 
-		glfwSwapBuffers(window);
+		//glfwSwapBuffers(window);
 
+		//glfwPollEvents();
+
+		// clear color and depth buffer
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(shaderProgram);
+		glBindVertexArray(VAO);
+		// draw triangles
+		glDrawArrays(GL_TRIANGLES, 0, 6); //mode,first,count
+		// update other events like input handling
 		glfwPollEvents();
+		// put the stuff we’ve been drawing onto the display
+		glfwSwapBuffers(window);
 	}
+
 	glfwDestroyWindow(window);
+
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
 }
