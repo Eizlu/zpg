@@ -16,24 +16,29 @@
 #include <stdio.h>
 
 
+float offsetX_t = -0.4f;
+float offsetY_t = 0.4f;
+float offsetX_s = +0.4f;
+float offsetY_s = -0.4f;
 struct Vertex {
 	float position[4]; // x, y, z, w
 	float color[4];    // r, g, b, a
 };
 
 const Vertex b[] = {
-	{0.0f, 0.5f, 0.0f ,1.f},{ 1, 1, 0, 1 },
-	{0.5f, -0.5f, 0.0, 1.f},{ 1, 1, 0, 1 },
-	{ -0.5f, -0.5f, 0.0f, 1.f },{ 1, 1, 0, 1 }
+	{{0.0f+ offsetX_t, 0.3f+ offsetY_t, 0.0f ,1.f},{ 0, 1, 0, 1 }},
+	{{0.3f+ offsetX_t, -0.3f+ offsetY_t, 0.0, 1.f},{ 1, 0, 0, 1 }},
+	{{ -0.3f+ offsetX_t, -0.3f+ offsetY_t, 0.0f, 1.f },{ 0, 0, 0, 1 }}
 };
 
-float points2[] = {
-   -0.5f, 0.5f, 0.0f,
-	0.5f, 0.5f, 0.0f,
-	-0.5f,  -0.5f, 0.0f,
-   0.5f,  0.5f, 0.0f,
-	-0.5f, -0.5f, 0.0f,
-	0.5f,  -0.5f, 0.0f
+const Vertex square[] = {
+	{{ -0.3f+ offsetX_s, 0.3f+ offsetY_s, 0.0f, 1.0f},{0,1,1,1}},
+	{{0.3f+ offsetX_s, 0.3f+ offsetY_s, 0.0f, 1.0f},{0,0,0,1}},
+	{{-0.3f+ offsetX_s,  -0.3f+ offsetY_s, 0.0f, 1.0f},{0,0,0,1}},
+
+	{{0.3f+ offsetX_s,  0.3f+ offsetY_s, 0.0f, 1.0f},{0,0,0,1}},
+	{{-0.3f+ offsetX_s, -0.3f+ offsetY_s, 0.0f, 1.0f},{0,0,0,1}},
+	{{0.3f+ offsetX_s,  -0.3f+ offsetY_s, 0.0f, 1.0f},{1,0,1,1}}
 };
 
 //const a b[] = {
@@ -45,18 +50,22 @@ float points2[] = {
 
 const char* vertex_shader =
 "#version 330\n"
-"layout(location=0) in vec3 vp;"
+"layout(location=0) in vec4 vp;" //vertex position
+"layout(location=1) in vec4 color;"	//vertex color
+"out vec4 vertexColor;" //output to fragment shader
 "void main () {"
-"     gl_Position = vec4 (vp, 1.0);"
+"	gl_Position = vp;"
+"	vertexColor = color;"
 "}";
 
 
 
 const char* fragment_shader =
-"#version 330\n"
-"out vec4 fragColor;"
+"#version 330\n"		
+"in vec4 vertexColor;" //input from vertex shader
+"out vec4 fragColor;"	//output  fragment color
 "void main () {"
-"     fragColor = vec4 (0.5, 0.5, 0, 1.0);"
+"	fragColor=vertexColor; "
 "}";
 
 
@@ -217,6 +226,25 @@ int main(void)
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(float) * 4));
 	glEnableVertexAttribArray(1);
 
+	GLuint VBO_square, VAO_square;
+
+	glGenBuffers(1, &VBO_square);
+	glGenVertexArrays(1, &VAO_square);
+
+	glBindVertexArray(VAO_square);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_square);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(square), square, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// color attribute
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(float) * 4));
+	glEnableVertexAttribArray(1);
+
+	//unbinding
+	glBindVertexArray(0);
 
 
 	//create and compile shaders
@@ -227,8 +255,8 @@ int main(void)
 	glShaderSource(fragmentShader, 1, &fragment_shader, NULL);
 	glCompileShader(fragmentShader);
 	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, fragmentShader);
 	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
 	glLinkProgram(shaderProgram);
 
 	GLint status;
@@ -299,7 +327,10 @@ int main(void)
 		glUseProgram(shaderProgram);
 		glBindVertexArray(VAO);
 		// draw triangles
-		glDrawArrays(GL_TRIANGLES, 0, 6); //mode,first,count
+		glDrawArrays(GL_TRIANGLES, 0, 3); //mode,first,count
+		// draw square
+		glBindVertexArray(VAO_square);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 		// update other events like input handling
 		glfwPollEvents();
 		// put the stuff we’ve been drawing onto the display
