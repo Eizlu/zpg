@@ -7,47 +7,37 @@
   **/
 
 #include <iostream>
-#include "Shader.h"
+#include "shader.h"
 
-GLuint Shader::compileShader(const char* source, GLenum shaderType) {
-	GLuint shader = glCreateShader(shaderType);
-	glShaderSource(shader, 1, &source, NULL);
-	glCompileShader(shader);
+//GLuint Shader::compileShader(const char* source, GLenum shaderType) {
+//	GLuint shader = glCreateShader(shaderType);
+//	glShaderSource(shader, 1, &source, NULL);
+//	glCompileShader(shader);
+//
+//	GLint success;
+//	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+//	if (!success) {
+//		GLchar infoLog[512];
+//		glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+//		std::cerr << "Shader compilation error: " << infoLog << std::endl;
+//	}
+//	return shader;
+//}
 
-	GLint success;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar infoLog[512];
-		glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-		std::cerr << "Shader compilation error: " << infoLog << std::endl;
-	}
-	return shader;
-}
-
-Shader::Shader(const char* vertexSource, const char* fragmentSource) {
-	GLuint vertexShader = compileShader(vertexSource, GL_VERTEX_SHADER);
-	GLuint fragmentShader = compileShader(fragmentSource, GL_FRAGMENT_SHADER);
-
-	programID = glCreateProgram();
-	glAttachShader(programID, vertexShader);
-	glAttachShader(programID, fragmentShader);
-	glLinkProgram(programID);
+Shader::Shader(GLenum type, const char* source) {
+	shaderID = glCreateShader(type);
+	glShaderSource(shaderID, 1, &source, NULL);
+	glCompileShader(shaderID);
 
 	GLint success;
-	glGetProgramiv(programID, GL_LINK_STATUS, &success);
+	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		GLchar infoLog[512];
-		glGetShaderInfoLog(programID, 512, nullptr, infoLog);
+		glGetShaderInfoLog(shaderID, 512, nullptr, infoLog);
 		std::cerr << "Shader compilation error: " << infoLog << std::endl;
 	}
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
 }
 
 Shader::~Shader() {
-	glDeleteProgram(programID);
-}
-
-void Shader::use() const {
-	glUseProgram(programID);
+	glDeleteShader(shaderID);
 }

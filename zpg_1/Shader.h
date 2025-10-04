@@ -11,13 +11,23 @@
 
 class Shader {
 private:
-	GLuint programID;
-
-	GLuint compileShader(const char* source, GLenum shaderType);
+	GLuint shaderID;
+	friend class ShaderProgram;
 public:
-	Shader(const char* vertexSource, const char* fragmentSource);
+	Shader(GLenum type, const char* source);
 	~Shader();
 
-	void use() const;
-	GLuint getID() const { return programID; }
 };
+
+//class Shader {
+//private:
+//	GLuint programID;
+//
+//	float r,g,b;
+//public:
+//	Shader(float red, float green, float blue);
+//	~Shader();
+//
+//	void create()
+//	void use();
+//};
