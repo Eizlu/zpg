@@ -10,10 +10,16 @@ class Application
 private:
 	GLFWwindow* window;
 	std::vector<std::unique_ptr<Scene>> scenes;
+	//Camera* mainCamera;
+	//std::unique_ptr<Camera> mainCamera;
 	int currentSceneIndex;
 	int width;
 	int height;
 	const char* title;
+
+	bool rightMouseButtonPressed;
+	double lastMouseX;
+	double lastMouseY;
 
 	static void error_callback(int error, const char* description);
 	static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -24,6 +30,7 @@ private:
 	static void button_callback(GLFWwindow* window, int button, int action, int mode);
 
 	void createScenes();
+	void generateForest(Scene* scene, int treeCount, int bushCount);
 	void switchToScene(int index);
 	void processInput();
 public:

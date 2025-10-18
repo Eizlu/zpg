@@ -1,7 +1,7 @@
 #include "scene.h"
 #include <iostream>
 
-Scene::Scene(const std::string& sceneName): shaderProgram(nullptr), name(sceneName)
+Scene::Scene(const std::string& sceneName) : shaderProgram(nullptr), name(sceneName), camera(nullptr)
 {
 }
 
@@ -13,20 +13,22 @@ Scene::~Scene()
 
 void Scene::cleanup()
 {
-	for (auto& obj : objects) {
-		delete obj;
-	}
 	objects.clear();
 }
 
-void Scene::addObject(DrawableObject* object)
+void Scene::addObject(std::unique_ptr<DrawableObject> object)
 {
-	objects.push_back(object);
+	objects.push_back(std::move(object));
 }
 
-void Scene::setCamera(Camera* cam)
+void Scene::setCamera(std::unique_ptr<Camera> cam)
 {
-	camera = cam;
+	camera = std::move(cam);
+	if(camera && shaderProgram)
+	{
+		camera->addObserver(shaderProgram.get());
+		camera->notifyObservers();
+	}
 }
 
 
@@ -59,26 +61,18 @@ void Scene::init()
 
 	shaderProgram = std::make_unique<ShaderProgram>(vertex_shader, fragment_shader);
 
+	if (camera)
+	{
+		camera->addObserver(shaderProgram.get());
+	}
+
 	std::cout << "Scene '" << name << "' initialized with " << objects.size() << " objects" << std::endl;
 }
 
-void Scene::draw()
+void Scene::draw( int windowWidth, int windowHeight)
 {
+	shaderProgram->setWindowSize(windowWidth, windowHeight);
 	shaderProgram->use();
-
-	if (camera)
-	{
-		// nastavuju do shaderu
-		glm::mat4 view = camera->LookAt(camera->getPosition(), camera->getPosition() + camera->getFront(), camera->getUp());
-
-		//dynamicke prepocitani podle resize okna
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), 1200.0f / 800.0f, 0.1f, 100.0f);
-
-		shaderProgram->setUniform("view", view);
-		shaderProgram->setUniform("projection", projection); 
-
-	}
-
 	for ( auto& obj : objects) {
 		shaderProgram->setUniform("model", obj->getTransformation().getMatrix());
 		obj->draw(*shaderProgram);

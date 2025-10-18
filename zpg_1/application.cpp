@@ -3,6 +3,8 @@
 #include "tree.h"
 #include "sphere.h"
 #include "suzi_flat.h"
+#include "bushes.h"
+#include "ground.h"
 
 
 void Application::error_callback(int error, const char* description) {
@@ -28,6 +30,10 @@ void Application::key_callback(GLFWwindow* window, int key, int scancode, int ac
 			std::cout << "Switching to Scene 3 (Mixed)" << std::endl;
 			app->switchToScene(2);
 		}
+		else if (key == GLFW_KEY_4 || key == GLFW_KEY_KP_4) {  
+			std::cout << "Switching to Scene 4 (Forest)" << std::endl;
+			app->switchToScene(3);
+		}
 		else if (key == GLFW_KEY_ESCAPE)
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
@@ -50,11 +56,42 @@ void Application::window_iconify_callback(GLFWwindow* window, int iconified) {
 }
 
 void Application::cursor_callback(GLFWwindow* window, double x, double y) {
-	printf("cursor_callback \n"); 
+	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+
+	if(app->rightMouseButtonPressed) {
+		double xOffset = x - app->lastMouseX;
+		double yOffset = app->lastMouseY - y; 
+
+		Camera* camera = nullptr;
+		if (app->currentSceneIndex < app->scenes.size()) {
+			camera = app->scenes[app->currentSceneIndex]->getCamera();
+		}
+		if (camera) {
+			camera->processMouseMovement(static_cast<float>(xOffset), static_cast<float>(yOffset));
+		}
+	}
+
+	app->lastMouseX = x;
+	app->lastMouseY = y;
 }
 
 void Application::button_callback(GLFWwindow* window, int button, int action, int mode) {
-	if (action == GLFW_PRESS) printf("button_callback [%d,%d,%d]\n", button, action, mode);
+	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+
+	if (button == GLFW_MOUSE_BUTTON_RIGHT)
+	{
+		if (action == GLFW_PRESS) {
+			app->rightMouseButtonPressed = true;
+			glfwGetCursorPos(window, &app->lastMouseX, &app->lastMouseY);
+		}
+		else if (action == GLFW_RELEASE) {
+			app->rightMouseButtonPressed = false;
+		}
+	}
+	if(action == GLFW_PRESS)
+	{
+		printf("Mouse button pressed: %d\n", button);
+	}
 }
 
 void Application::processInput()
@@ -99,79 +136,134 @@ void Application::switchToScene(int index)
 	}
 }
 
+void Application::generateForest(Scene* scene, int treeCount, int bushCount)
+{
+	std::cout << "Generating forest with " << treeCount << " trees and " << bushCount << " bushes..." << std::endl;
+
+	for(int i = 0; i < treeCount; ++i)
+	{
+		auto treeObj = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
+
+		float x = (rand() % 400 - 100) * 0.1f; // Random x between -1.0 and 1.0
+		float z = (rand() % 400 - 100) * 0.1f; // Random z between -1.0 and 1.0
+
+		float scale = 0.1f + (rand() % 16) * 0.01f;
+		float rotation = rand() % 360;
+
+		treeObj->getTransformation().setPosition(x, -0.8f, z);
+		treeObj->getTransformation().setScale(scale);
+		treeObj->getTransformation().setRotation(rotation, glm::vec3(0, 1, 0));
+
+		scene->addObject(std::move(treeObj));
+	}
+
+	for (int i = 0; i < bushCount; i++) {
+		auto bushObj = std::make_unique<DrawableObject>(new Model(bushes, 8730));
+
+		// Náhodná pozice (trochu jiná distribuce než stromy)
+		float x = (rand() % 400 - 100) * 0.1f;
+		float z = (rand() % 400 - 100) * 0.1f;
+
+		// Keøe jsou menší než stromy
+		float scale = 0.1f + (rand() % 11) * 0.005f; // 0.02f to 0.05f
+		float rotation = rand() % 360;
+
+		bushObj->getTransformation().setPosition(x, -0.7f, z); // Trochu výše než stromy
+		bushObj->getTransformation().setScale(scale);
+		bushObj->getTransformation().setRotation(rotation, glm::vec3(0, 1, 0));
+
+		scene->addObject(std::move(bushObj));
+	}
+
+	std::cout << "Forest generation complete!" << std::endl;
+}
+
 void Application::createScenes()
 {
 	auto scene1 = std::make_unique<Scene>("Tree Scene");
 
-	auto tree1 = new DrawableObject(new Model(tree, sizeof(tree) / sizeof(tree[0])));
+	auto tree1 = std::make_unique<DrawableObject> (new Model(tree, sizeof(tree) / sizeof(tree[0])));
 	auto composite1 = tree1->createCompositeTransformation();
 	composite1->createAndAddTransformation()->setPosition(-0.8f, -0.8f, 0.0f);
 	composite1->createAndAddTransformation()->setScale(0.1f);
-	scene1->addObject(tree1);
+	scene1->addObject(std::move(tree1));
 
-	auto tree2 = new DrawableObject(new Model(tree, sizeof(tree) / sizeof(tree[0])));
+	auto tree2 = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
 	auto composite2 = tree2->createCompositeTransformation();
 	composite2->createAndAddTransformation()->setPosition(0.0f, -0.8f, 0.0f);
 	composite2->createAndAddTransformation()->setRotation(45.0f, glm::vec3(0, 1, 0));
 	composite2->createAndAddTransformation()->setScale(0.15f);
-	scene1->addObject(tree2);
+	scene1->addObject(std::move(tree2));
 
-	auto tree3 = new DrawableObject(new Model(tree, sizeof(tree) / sizeof(tree[0])));
+	auto tree3 = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
 	auto composite3 = tree3->createCompositeTransformation();
 	composite3->createAndAddTransformation()->setPosition(0.8f, -0.8f, 0.0f);
 	composite3->createAndAddTransformation()->setRotation(30.0f, glm::vec3(0, 1, 0));
 	composite3->createAndAddTransformation()->setScale(0.1f);
-	scene1->addObject(tree3);
+	scene1->addObject(std::move(tree3));
 
 	scenes.push_back(std::move(scene1));
 
 	auto scene2 = std::make_unique<Scene>("Sphere Scene");
 
-	auto sphere1 = new DrawableObject(new Model(sphere, 17280));
+	auto sphere1 = std::make_unique<DrawableObject>(new Model(sphere, 17280));
 	sphere1->getTransformation().setPosition(-0.5f, -0.5f, 0.0f);
 	sphere1->getTransformation().setScale(0.2f);
-	scene2->addObject(sphere1);
+	scene2->addObject(std::move(sphere1));
 
-	auto sphere2 = new DrawableObject(new Model(sphere, 17280));
+	auto sphere2 = std::make_unique<DrawableObject>(new Model(sphere, 17280));
 	sphere2->getTransformation().setPosition(0.5f, -0.5f, 0.0f);
 	sphere2->getTransformation().setScale(0.2f);
-	scene2->addObject(sphere2);
+	scene2->addObject(std::move(sphere2));
 
-	auto sphere3 = new DrawableObject(new Model(sphere, 17280));
+	auto sphere3 = std::make_unique<DrawableObject>(new Model(sphere, 17280));
 	sphere3->getTransformation().setPosition(0.5f, 0.5f, 0.0f);
 	sphere3->getTransformation().setScale(0.2f);
-	scene2->addObject(sphere3);
+	scene2->addObject(std::move(sphere3));
 
-	auto sphere4 = new DrawableObject(new Model(sphere, 17280));
+	auto sphere4 = std::make_unique<DrawableObject>(new Model(sphere, 17280));
 	sphere4->getTransformation().setPosition(-0.5f, 0.5f, 0.0f);
 	sphere4->getTransformation().setScale(0.2f);
-	scene2->addObject(sphere4);
+	scene2->addObject(std::move(sphere4));
 
 	scenes.push_back(std::move(scene2));
 
 	auto scene3 = std::make_unique<Scene>("Mixed Scene");
 
-	auto treeObj = new DrawableObject(new Model(tree, sizeof(tree) / sizeof(tree[0])));
+	auto treeObj = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
 	treeObj->getTransformation().setPosition(-0.6f, -0.8f, 0.0f);
 	treeObj->getTransformation().setScale(0.08f);
-	scene3->addObject(treeObj);
+	scene3->addObject(std::move(treeObj));
 
-	auto sphereObj = new DrawableObject(new Model(sphere, 17280));
+	auto sphereObj = std::make_unique<DrawableObject>(new Model(sphere, 17280));
 	sphereObj->getTransformation().setPosition(0.6f, -0.3f, 0.0f);
 	sphereObj->getTransformation().setRotation(90.0f, glm::vec3(1, 1, 0));
 	sphereObj->getTransformation().setScale(0.2f);
-	scene3->addObject(sphereObj);
+	scene3->addObject(std::move(sphereObj));
 
-	auto suziObj = new DrawableObject(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
+	auto suziObj = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
 	suziObj->getTransformation().setPosition(-0.2f, 0.2f, 0.0f);
 	suziObj->getTransformation().setRotation(-90.0f, glm::vec3(1, 0, 0));
 	suziObj->getTransformation().setScale(0.5f);
-	scene3->addObject(suziObj);
+	scene3->addObject(std::move(suziObj));
 
 	scenes.push_back(std::move(scene3));
+
+	// NOVÁ SCÉNA 4 - LES
+	auto forestScene = std::make_unique<Scene>("Forest Scene");
+	generateForest(forestScene.get(), 50, 50); // 50 stromù, 50 keøù
+	scenes.push_back(std::move(forestScene));
 }
 
-Application::Application(int width, int height, const char* title) : width(width), height(height), title(title), window(nullptr), currentSceneIndex(0)
+Application::Application(int width, int height, const char* title) : 
+	width(width), 
+	height(height), 
+	title(title), 
+	window(nullptr), 
+	currentSceneIndex(0), 
+	rightMouseButtonPressed(false), 
+	lastMouseX(0.0), 
+	lastMouseY(0.0)
 {
 }
 
@@ -199,7 +291,13 @@ void Application::initialize()
 
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetWindowSizeCallback(window, window_size_callback);
+	glfwSetCursorPosCallback(window, cursor_callback);
+	glfwSetMouseButtonCallback(window, button_callback);
 	glfwSetWindowUserPointer(window, this);
+
+	rightMouseButtonPressed = false;
+	lastMouseX = width / 2.0;
+	lastMouseY = height / 2.0;
 
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK) {
@@ -211,20 +309,19 @@ void Application::initialize()
 
 	glfwSetWindowFocusCallback(window, window_focus_callback);
 	glfwSetWindowIconifyCallback(window, window_iconify_callback);
-	//glfwSetCursorPosCallback(window, cursor_callback);
-	glfwSetMouseButtonCallback(window, button_callback);
 
 	createScenes();
-	auto mainCamera = new Camera();
 	
 	for (auto& scene:scenes) {
 		scene->init();
-		scene->setCamera(mainCamera);
+		auto camera = std::make_unique<Camera>();
+		scene->setCamera(std::move(camera));
 		std::cout << "Initialized scene: " << scene->getName() << std::endl;
 	}
 
 	std::cout << "Application initialized with " << scenes.size() << " scenes" << std::endl;
 	std::cout << "Controls: 1-" << scenes.size() << " - switch scenes "<< std::endl;
+	std::cout << "Mouse: Right button + move - look around" << std::endl;
 }
 
 void Application::run()
@@ -237,7 +334,7 @@ void Application::run()
 
 		// Vykreslení aktuální scény
 		if (currentSceneIndex < scenes.size()) {
-			scenes[currentSceneIndex]->draw();
+			scenes[currentSceneIndex]->draw(width,height);
 		}
 
 		glfwSwapBuffers(window);

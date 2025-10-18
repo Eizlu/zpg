@@ -8,19 +8,19 @@
 class Scene {
 private:
 	std::unique_ptr<ShaderProgram> shaderProgram;
-	std::vector<DrawableObject*> objects;
+	std::vector<std::unique_ptr<DrawableObject>> objects;
 	std::string name;
-	Camera* camera;
+	std::unique_ptr<Camera> camera;
 public:	
 	Scene(const std::string& sceneName = "Unnamed Scene");
 	~Scene();
 	void init();
-	void draw();
+	void draw( int windowWidth , int windowHeight);
 	void cleanup();
 
-	void addObject(DrawableObject* object);
-	void setCamera(Camera * cam);
-	Camera* getCamera() const { return camera; }
+	void addObject(std::unique_ptr<DrawableObject> object);
+	void setCamera(std::unique_ptr<Camera> cam);
+	Camera* getCamera() { return camera.get(); }
 
 	const std::string& getName() const { return name; }
 };

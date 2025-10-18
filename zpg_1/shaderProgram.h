@@ -3,12 +3,16 @@
 #include <string>
 #include "shader.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include "cameraObserver.h"
 
 
-class ShaderProgram
+class ShaderProgram:public CameraObserver
 {
 private:
 	GLuint programID;
+	int windowWidth;
+	int windowHeight;
 public:
 	ShaderProgram(const char* vertexSource, const char* fragmentSource);
 	~ShaderProgram();
@@ -19,4 +23,8 @@ public:
 	void setUniform(const std::string& name, float value) const;
 	void setUniform(const std::string& name, int value) const;
 	void setUniform(const std::string& name, bool value) const;
+
+	void setWindowSize(int width, int height);
+
+	void onCameraChanged(const Camera& camera) override;
 };

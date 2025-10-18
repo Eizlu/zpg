@@ -146,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="application.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="cameraObserver.h" />
     <ClInclude Include="compositeTransformation.h" />
     <ClInclude Include="drawableObject.h" />
     <ClInclude Include="model.h" />
