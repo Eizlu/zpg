@@ -13,6 +13,9 @@ ShaderProgram::ShaderProgram(const char* vertexSource, const char* fragmentSourc
 	glAttachShader(programID, fragment.shaderID);
 	glLinkProgram(programID);
 
+	glDetachShader(programID, vertex.shaderID);
+	glDetachShader(programID, fragment.shaderID);
+
 	GLint success;
 	glGetProgramiv(programID, GL_LINK_STATUS, &success);
 	if (!success) {
@@ -24,7 +27,10 @@ ShaderProgram::ShaderProgram(const char* vertexSource, const char* fragmentSourc
 
 ShaderProgram::~ShaderProgram()
 {
-	glDeleteProgram(programID);
+	if (programID)
+	{
+		glDeleteProgram(programID);
+	}
 }
 
 void ShaderProgram::use() const
@@ -32,10 +38,47 @@ void ShaderProgram::use() const
 	glUseProgram(programID);
 }
 
-void ShaderProgram::setUniformMat4(const std::string& name, const glm::mat4& mat) const
+//matice
+void ShaderProgram::setUniform(const std::string& name, const glm::mat4& mat) const
 {
 	GLint location = glGetUniformLocation(programID, name.c_str());
 	if (location != -1) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
+	}
+}
+
+//vektor
+void ShaderProgram::setUniform(const std::string& name, const glm::vec3& value) const
+{
+	GLint location = glGetUniformLocation(programID, name.c_str());
+	if (location != -1) {
+		glUniform3f(location, value.x, value.y, value.z);
+	}
+}
+
+//float
+void ShaderProgram::setUniform(const std::string& name, float value) const
+{
+	GLint location = glGetUniformLocation(programID, name.c_str());
+	if (location != -1) {
+		glUniform1f(location, value);
+	}
+}
+
+//integer
+void ShaderProgram::setUniform(const std::string& name, int value) const
+{
+	GLint location = glGetUniformLocation(programID, name.c_str());
+	if (location != -1) {
+		glUniform1i(location, value);
+	}
+}
+
+//boolean
+void ShaderProgram::setUniform(const std::string& name, bool value) const
+{
+	GLint location = glGetUniformLocation(programID, name.c_str());
+	if (location != -1) {
+		glUniform1i(location, value ? 1 : 0);
 	}
 }

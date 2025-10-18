@@ -12,8 +12,10 @@ private:
 public:
 	Transformation();
 	void setPosition(float x, float y, float z);
+	void setRotation(float angleX, float angleY, float angleZ);
 	void setRotation(float angleX, glm::vec3 axis);
 	void setScale(float s);
+	void setScale(float sx, float sy, float sz);
 
 	glm::mat4 getMatrix() const;
 };

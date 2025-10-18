@@ -128,12 +128,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="application.cpp" />
+    <ClCompile Include="camera.cpp" />
+    <ClCompile Include="compositeTransformation.cpp" />
     <ClCompile Include="drawableObjects.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="shader.cpp" />
-    <ClCompile Include="shaderProgram.cpp" />
+    <ClCompile Include="shaderProgram.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="shaderProgram.h" />
     <ClCompile Include="square.cpp" />
     <ClCompile Include="transformation.cpp" />
@@ -141,6 +145,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
+    <ClInclude Include="camera.h" />
+    <ClInclude Include="compositeTransformation.h" />
     <ClInclude Include="drawableObject.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="scene.h" />
