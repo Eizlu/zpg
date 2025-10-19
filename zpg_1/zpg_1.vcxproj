@@ -131,6 +131,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="compositeTransformation.cpp" />
     <ClCompile Include="drawableObjects.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
     <ClCompile Include="scene.cpp" />
@@ -145,13 +146,20 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="application.h" />
+    <ClInclude Include="blinnPhongShader.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="cameraObserver.h" />
     <ClInclude Include="compositeTransformation.h" />
+    <ClInclude Include="constantShader.h" />
     <ClInclude Include="drawableObject.h" />
+    <ClInclude Include="lambertShader.h" />
+    <ClInclude Include="light.h" />
+    <ClInclude Include="lightObserver.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="phongShader.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="shaderManager.h" />
     <ClInclude Include="square.h" />
     <ClInclude Include="transformation.h" />
     <ClInclude Include="triangle.h" />

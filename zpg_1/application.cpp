@@ -3,8 +3,13 @@
 #include "tree.h"
 #include "sphere.h"
 #include "suzi_flat.h"
+#include "suzi_smooth.h"
 #include "bushes.h"
 #include "ground.h"
+#include "lambertShader.h"
+#include "constantShader.h"
+#include "phongShader.h"
+#include "blinnPhongShader.h"
 
 
 void Application::error_callback(int error, const char* description) {
@@ -19,20 +24,24 @@ void Application::key_callback(GLFWwindow* window, int key, int scancode, int ac
 
 		// Handle numeric keys (both numpad and regular)
 		if (key == GLFW_KEY_1 || key == GLFW_KEY_KP_1) {
-			std::cout << "Switching to Scene 1 (Trees)" << std::endl;
+			std::cout << "Switching to Scene 1 (Constant)" << std::endl;
 			app->switchToScene(0);
 		}
 		else if (key == GLFW_KEY_2 || key == GLFW_KEY_KP_2) {
-			std::cout << "Switching to Scene 2 (Spheres)" << std::endl;
+			std::cout << "Switching to Scene 2 (Lambert)" << std::endl;
 			app->switchToScene(1);
 		}
 		else if (key == GLFW_KEY_3 || key == GLFW_KEY_KP_3) {
-			std::cout << "Switching to Scene 3 (Mixed)" << std::endl;
+			std::cout << "Switching to Scene 3 (Phong)" << std::endl;
 			app->switchToScene(2);
 		}
 		else if (key == GLFW_KEY_4 || key == GLFW_KEY_KP_4) {  
-			std::cout << "Switching to Scene 4 (Forest)" << std::endl;
+			std::cout << "Switching to Scene 4 (PhongBlinn)" << std::endl;
 			app->switchToScene(3);
+		}
+		else if (key == GLFW_KEY_5 || key == GLFW_KEY_KP_5) {
+			std::cout << "Switching to Scene 5 (trees)" << std::endl;
+			app->switchToScene(4);
 		}
 		else if (key == GLFW_KEY_ESCAPE)
 		{
@@ -180,76 +189,63 @@ void Application::generateForest(Scene* scene, int treeCount, int bushCount)
 
 void Application::createScenes()
 {
-	auto scene1 = std::make_unique<Scene>("Tree Scene");
+	auto scene1 = std::make_unique<Scene>("Constant Scene");
 
-	auto tree1 = std::make_unique<DrawableObject> (new Model(tree, sizeof(tree) / sizeof(tree[0])));
-	auto composite1 = tree1->createCompositeTransformation();
-	composite1->createAndAddTransformation()->setPosition(-0.8f, -0.8f, 0.0f);
-	composite1->createAndAddTransformation()->setScale(0.1f);
-	scene1->addObject(std::move(tree1));
+	auto suzi1 = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
+	suzi1->getTransformation().setPosition(-0.7f, 0.0f, 0.0f);
+	suzi1->getTransformation().setScale(0.5f);
+	scene1->addObject(std::move(suzi1));
 
-	auto tree2 = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
-	auto composite2 = tree2->createCompositeTransformation();
-	composite2->createAndAddTransformation()->setPosition(0.0f, -0.8f, 0.0f);
-	composite2->createAndAddTransformation()->setRotation(45.0f, glm::vec3(0, 1, 0));
-	composite2->createAndAddTransformation()->setScale(0.15f);
-	scene1->addObject(std::move(tree2));
-
-	auto tree3 = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
-	auto composite3 = tree3->createCompositeTransformation();
-	composite3->createAndAddTransformation()->setPosition(0.8f, -0.8f, 0.0f);
-	composite3->createAndAddTransformation()->setRotation(30.0f, glm::vec3(0, 1, 0));
-	composite3->createAndAddTransformation()->setScale(0.1f);
-	scene1->addObject(std::move(tree3));
+	auto suzi2 = std::make_unique<DrawableObject>(new Model(suziSmooth, sizeof(suziSmooth) / sizeof(suziSmooth[0])));
+	suzi2->getTransformation().setPosition(0.7f, 0.0f, 0.0f);
+	suzi2->getTransformation().setScale(0.5f);
+	scene1->addObject(std::move(suzi2));
 
 	scenes.push_back(std::move(scene1));
 
-	auto scene2 = std::make_unique<Scene>("Sphere Scene");
+	auto scene2 = std::make_unique<Scene>("Lambert Scene");
 
-	auto sphere1 = std::make_unique<DrawableObject>(new Model(sphere, 17280));
-	sphere1->getTransformation().setPosition(-0.5f, -0.5f, 0.0f);
-	sphere1->getTransformation().setScale(0.2f);
-	scene2->addObject(std::move(sphere1));
+	auto suzi3 = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
+	suzi3->getTransformation().setPosition(-0.7f, 0.0f, 0.0f);
+	suzi3->getTransformation().setScale(0.5f);
+	scene2->addObject(std::move(suzi3));
 
-	auto sphere2 = std::make_unique<DrawableObject>(new Model(sphere, 17280));
-	sphere2->getTransformation().setPosition(0.5f, -0.5f, 0.0f);
-	sphere2->getTransformation().setScale(0.2f);
-	scene2->addObject(std::move(sphere2));
-
-	auto sphere3 = std::make_unique<DrawableObject>(new Model(sphere, 17280));
-	sphere3->getTransformation().setPosition(0.5f, 0.5f, 0.0f);
-	sphere3->getTransformation().setScale(0.2f);
-	scene2->addObject(std::move(sphere3));
-
-	auto sphere4 = std::make_unique<DrawableObject>(new Model(sphere, 17280));
-	sphere4->getTransformation().setPosition(-0.5f, 0.5f, 0.0f);
-	sphere4->getTransformation().setScale(0.2f);
-	scene2->addObject(std::move(sphere4));
+	auto suzi4 = std::make_unique<DrawableObject>(new Model(suziSmooth, sizeof(suziSmooth) / sizeof(suziSmooth[0])));
+	suzi4->getTransformation().setPosition(0.7f, 0.0f, 0.0f);
+	suzi4->getTransformation().setScale(0.5f);
+	scene2->addObject(std::move(suzi4));
 
 	scenes.push_back(std::move(scene2));
 
-	auto scene3 = std::make_unique<Scene>("Mixed Scene");
+	auto scene3 = std::make_unique<Scene>("Phong Scene");
 
-	auto treeObj = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
-	treeObj->getTransformation().setPosition(-0.6f, -0.8f, 0.0f);
-	treeObj->getTransformation().setScale(0.08f);
-	scene3->addObject(std::move(treeObj));
+	auto suzi5 = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
+	suzi5->getTransformation().setPosition(-0.7f, 0.0f, 0.0f);
+	suzi5->getTransformation().setScale(0.5f);
+	scene3->addObject(std::move(suzi5));
 
-	auto sphereObj = std::make_unique<DrawableObject>(new Model(sphere, 17280));
-	sphereObj->getTransformation().setPosition(0.6f, -0.3f, 0.0f);
-	sphereObj->getTransformation().setRotation(90.0f, glm::vec3(1, 1, 0));
-	sphereObj->getTransformation().setScale(0.2f);
-	scene3->addObject(std::move(sphereObj));
-
-	auto suziObj = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
-	suziObj->getTransformation().setPosition(-0.2f, 0.2f, 0.0f);
-	suziObj->getTransformation().setRotation(-90.0f, glm::vec3(1, 0, 0));
-	suziObj->getTransformation().setScale(0.5f);
-	scene3->addObject(std::move(suziObj));
+	auto suzi6 = std::make_unique<DrawableObject>(new Model(suziSmooth, sizeof(suziSmooth) / sizeof(suziSmooth[0])));
+	suzi6->getTransformation().setPosition(0.7f, 0.0f, 0.0f);
+	suzi6->getTransformation().setScale(0.5f);
+	scene3->addObject(std::move(suzi6));
 
 	scenes.push_back(std::move(scene3));
 
-	// NOVÁ SCÉNA 4 - LES
+	auto scene4 = std::make_unique<Scene>("PhongBlinn Scene");
+
+	auto suzi7 = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
+	suzi7->getTransformation().setPosition(-0.7f, 0.0f, 0.0f);
+	suzi7->getTransformation().setScale(0.5f);
+	scene4->addObject(std::move(suzi7));
+
+	auto suzi8 = std::make_unique<DrawableObject>(new Model(suziSmooth, sizeof(suziSmooth) / sizeof(suziSmooth[0])));
+	suzi8->getTransformation().setPosition(0.7f, 0.0f, 0.0f);
+	suzi8->getTransformation().setScale(0.5f);
+	scene4->addObject(std::move(suzi8));
+
+	scenes.push_back(std::move(scene4));
+
+	// NOVÁ SCÉNA 5 - LES
 	auto forestScene = std::make_unique<Scene>("Forest Scene");
 	generateForest(forestScene.get(), 50, 50); // 50 stromù, 50 keøù
 	scenes.push_back(std::move(forestScene));
@@ -313,9 +309,29 @@ void Application::initialize()
 	createScenes();
 	
 	for (auto& scene:scenes) {
+
+		if (scene->getName() == "Constant Scene") {
+			scene->setShaderManager(std::make_unique<ConstantShader>(glm::vec3(0.0f, 1.0f, 0.0f))); // Zelená
+		}
+		else if (scene->getName() == "Lambert Scene") {
+			scene->setShaderManager(std::make_unique<LambertShader>());
+		}
+		else if (scene->getName() == "Phong Scene") {
+			scene->setShaderManager(std::make_unique<PhongShader>());
+		}
+		else if (scene->getName() == "PhongBlinn Scene") {
+			scene->setShaderManager(std::make_unique<BlinnPhongShader>());
+		}
+		else if (scene->getName() == "Forest Scene") {
+			scene->setShaderManager(std::make_unique<LambertShader>());
+		}
 		scene->init();
 		auto camera = std::make_unique<Camera>();
 		scene->setCamera(std::move(camera));
+
+		auto light = std::make_unique<Light>(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(1.0f, 1.0f, 1.0f),1.0f);
+		scene->setLight(std::move(light));
+
 		std::cout << "Initialized scene: " << scene->getName() << std::endl;
 	}
 

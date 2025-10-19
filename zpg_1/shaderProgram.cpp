@@ -1,12 +1,16 @@
 #include "shaderProgram.h"
 #include "camera.h"
+#include "light.h" 
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
 
 ShaderProgram::ShaderProgram(const char* vertexSource, const char* fragmentSource) : windowWidth(1200), windowHeight(800)
 {
+
+	std::cout << "Compiling vertex shader..." << std::endl;
 	Shader vertex(GL_VERTEX_SHADER, vertexSource);
+	std::cout << "Compiling fragment shader..." << std::endl;
 	Shader fragment(GL_FRAGMENT_SHADER, fragmentSource);
 
 	programID = glCreateProgram();
@@ -23,7 +27,17 @@ ShaderProgram::ShaderProgram(const char* vertexSource, const char* fragmentSourc
 		GLchar infoLog[512];
 		glGetProgramInfoLog(programID, 512, nullptr, infoLog);
 		std::cerr << "Program linking error: " << infoLog << std::endl;
+		exit(EXIT_FAILURE);
 	}
+	else {
+		std::cout << "Shader program linked successfully! ID: " << programID << std::endl;
+	}
+
+	use();
+	GLint modelLoc = glGetUniformLocation(programID, "model");
+	GLint viewLoc = glGetUniformLocation(programID, "view");
+	GLint projLoc = glGetUniformLocation(programID, "projection");
+	std::cout << "Uniform locations - model: " << modelLoc << ", view: " << viewLoc << ", projection: " << projLoc << std::endl;
 }
 
 ShaderProgram::~ShaderProgram()
@@ -97,6 +111,8 @@ void ShaderProgram::onCameraChanged(const Camera& camera)
 {
 	use();
 
+	viewPosition = camera.getPosition();
+
 	glm::mat4 view = camera.LookAt(camera.getPosition(),
 		camera.getPosition() + camera.getFront(),
 		camera.getUp());
@@ -106,9 +122,18 @@ void ShaderProgram::onCameraChanged(const Camera& camera)
 
 	setUniform("view", view);
 	setUniform("projection", projection);
+	setUniform("viewPos", viewPosition);
 
 	std::cout << "Camera updated in shader - Position: ("
 		<< camera.getPosition().x << ", "
 		<< camera.getPosition().y << ", "
 		<< camera.getPosition().z << ")" << std::endl;
+}
+
+void ShaderProgram::onLightChanged(const Light& light)
+{
+	use();
+	setUniform("lightPosition", light.getPosition());
+	setUniform("lightColor", light.getColor());
+	setUniform("lightIntensity", light.getIntensity());
 }
