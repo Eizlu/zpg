@@ -6,6 +6,8 @@
 #include "suzi_smooth.h"
 #include "bushes.h"
 #include "ground.h"
+#include "triangle.h"
+#include "plain.h"
 #include "lambertShader.h"
 #include "constantShader.h"
 #include "phongShader.h"
@@ -153,15 +155,16 @@ void Application::generateForest(Scene* scene, int treeCount, int bushCount)
 	{
 		auto treeObj = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
 
-		float x = (rand() % 400 - 100) * 0.1f; // Random x between -1.0 and 1.0
-		float z = (rand() % 400 - 100) * 0.1f; // Random z between -1.0 and 1.0
+		float x = (rand() % 90 - 45) * 0.1f; // Random x between -1.0 and 1.0
+		float z = (rand() % 90 - 45) * 0.1f; // Random z between -1.0 and 1.0
 
 		float scale = 0.1f + (rand() % 16) * 0.01f;
 		float rotation = rand() % 360;
 
-		treeObj->getTransformation().setPosition(x, -0.8f, z);
+		treeObj->getTransformation().setPosition(x, -1.0f, z);
 		treeObj->getTransformation().setScale(scale);
 		treeObj->getTransformation().setRotation(rotation, glm::vec3(0, 1, 0));
+		treeObj->setShaderManager(std::make_unique<LambertShader>());
 
 		scene->addObject(std::move(treeObj));
 	}
@@ -170,16 +173,17 @@ void Application::generateForest(Scene* scene, int treeCount, int bushCount)
 		auto bushObj = std::make_unique<DrawableObject>(new Model(bushes, 8730));
 
 		// Náhodná pozice (trochu jiná distribuce než stromy)
-		float x = (rand() % 400 - 100) * 0.1f;
-		float z = (rand() % 400 - 100) * 0.1f;
+		float x = (rand() % 90 - 45) * 0.1f;
+		float z = (rand() % 90 - 45) * 0.1f;
 
 		// Keøe jsou menší než stromy
 		float scale = 0.1f + (rand() % 11) * 0.005f; // 0.02f to 0.05f
 		float rotation = rand() % 360;
 
-		bushObj->getTransformation().setPosition(x, -0.7f, z); // Trochu výše než stromy
+		bushObj->getTransformation().setPosition(x, -1.0f, z); // Trochu výše než stromy
 		bushObj->getTransformation().setScale(scale);
 		bushObj->getTransformation().setRotation(rotation, glm::vec3(0, 1, 0));
+		bushObj->setShaderManager(std::make_unique<LambertShader>());
 
 		scene->addObject(std::move(bushObj));
 	}
@@ -189,66 +193,149 @@ void Application::generateForest(Scene* scene, int treeCount, int bushCount)
 
 void Application::createScenes()
 {
-	auto scene1 = std::make_unique<Scene>("Constant Scene");
+	auto scene1 = std::make_unique<Scene>("Triangle Scene");
 
-	auto suzi1 = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
-	suzi1->getTransformation().setPosition(-0.7f, 0.0f, 0.0f);
-	suzi1->getTransformation().setScale(0.5f);
-	scene1->addObject(std::move(suzi1));
 
-	auto suzi2 = std::make_unique<DrawableObject>(new Model(suziSmooth, sizeof(suziSmooth) / sizeof(suziSmooth[0])));
-	suzi2->getTransformation().setPosition(0.7f, 0.0f, 0.0f);
-	suzi2->getTransformation().setScale(0.5f);
-	scene1->addObject(std::move(suzi2));
+	auto triangleObj = std::make_unique<DrawableObject>(new Triangle());
+	triangleObj->getTransformation().setPosition(0.0f, 0.0f, 0.0f);
+	triangleObj->setShaderManager(std::make_unique<PhongShader>());
+	scene1->addObject(std::move(triangleObj));
+
+	auto light1 = std::make_unique<Light>(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
+	scene1->setLight(std::move(light1));
 
 	scenes.push_back(std::move(scene1));
 
-	auto scene2 = std::make_unique<Scene>("Lambert Scene");
+	auto scene2 = std::make_unique<Scene>("Spheres Scene");
 
-	auto suzi3 = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
-	suzi3->getTransformation().setPosition(-0.7f, 0.0f, 0.0f);
-	suzi3->getTransformation().setScale(0.5f);
-	scene2->addObject(std::move(suzi3));
 
-	auto suzi4 = std::make_unique<DrawableObject>(new Model(suziSmooth, sizeof(suziSmooth) / sizeof(suziSmooth[0])));
-	suzi4->getTransformation().setPosition(0.7f, 0.0f, 0.0f);
-	suzi4->getTransformation().setScale(0.5f);
-	scene2->addObject(std::move(suzi4));
+	auto sphereObj1 = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+	sphereObj1->getTransformation().setPosition(-1.0f, 1.0f, -3.0f);
+	sphereObj1->getTransformation().setScale(0.5f);
+	sphereObj1->setShaderManager(std::make_unique<PhongShader>());
+	scene2->addObject(std::move(sphereObj1));
+
+	auto sphereObj2 = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+	sphereObj2->getTransformation().setPosition(1.0f, 1.0f, -3.0f);
+	sphereObj2->getTransformation().setScale(0.5f);
+	sphereObj2->setShaderManager(std::make_unique<PhongShader>());
+	scene2->addObject(std::move(sphereObj2));
+
+	auto sphereObj3 = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+	sphereObj3->getTransformation().setPosition(-1.0f, -1.0f, -3.0f);
+	sphereObj3->getTransformation().setScale(0.5f);
+	sphereObj3->setShaderManager(std::make_unique<PhongShader>());
+	scene2->addObject(std::move(sphereObj3));
+
+	auto sphereObj4 = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+	sphereObj4->getTransformation().setPosition(1.0f, -1.0f, -3.0f);
+	sphereObj4->getTransformation().setScale(0.5f);
+	sphereObj4->setShaderManager(std::make_unique<PhongShader>());
+	scene2->addObject(std::move(sphereObj4));
+
+	auto light2 = std::make_unique<Light>(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.5f);
+	scene2->setLight(std::move(light2));
 
 	scenes.push_back(std::move(scene2));
 
-	auto scene3 = std::make_unique<Scene>("Phong Scene");
 
-	auto suzi5 = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
-	suzi5->getTransformation().setPosition(-0.7f, 0.0f, 0.0f);
-	suzi5->getTransformation().setScale(0.5f);
-	scene3->addObject(std::move(suzi5));
+	auto forestScene = std::make_unique<Scene>("Forest Scene");
 
-	auto suzi6 = std::make_unique<DrawableObject>(new Model(suziSmooth, sizeof(suziSmooth) / sizeof(suziSmooth[0])));
-	suzi6->getTransformation().setPosition(0.7f, 0.0f, 0.0f);
-	suzi6->getTransformation().setScale(0.5f);
-	scene3->addObject(std::move(suzi6));
 
-	scenes.push_back(std::move(scene3));
+	auto groundObj = std::make_unique<DrawableObject>(new Model(plain, sizeof(plain) / sizeof(plain[0])));
+	groundObj->getTransformation().setPosition(0.0f, -1.0f, 0.0f);
+	groundObj->getTransformation().setScale(5.0f); // zvìtšení plochy
+	groundObj->setShaderManager(std::make_unique<ConstantShader>(glm::vec3(0.07f, 0.31f, 0.09f)));
+	forestScene->addObject(std::move(groundObj));
 
-	auto scene4 = std::make_unique<Scene>("PhongBlinn Scene");
+	generateForest(forestScene.get(), 50, 50); // 50 stromù, 50 keøù
+	
+	auto light3 = std::make_unique<Light>(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
+	forestScene->setLight(std::move(light3));
+	
+	scenes.push_back(std::move(forestScene));
 
-	auto suzi7 = std::make_unique<DrawableObject>(new Model(suziFlat, sizeof(suziFlat) / sizeof(suziFlat[0])));
-	suzi7->getTransformation().setPosition(-0.7f, 0.0f, 0.0f);
-	suzi7->getTransformation().setScale(0.5f);
-	scene4->addObject(std::move(suzi7));
 
-	auto suzi8 = std::make_unique<DrawableObject>(new Model(suziSmooth, sizeof(suziSmooth) / sizeof(suziSmooth[0])));
-	suzi8->getTransformation().setPosition(0.7f, 0.0f, 0.0f);
-	suzi8->getTransformation().setScale(0.5f);
-	scene4->addObject(std::move(suzi8));
+	auto scene4 = std::make_unique<Scene>("Solar System");
+
+	// Slunce
+	auto sunObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+	sunObj->getTransformation().setPosition(0.0f, 0.0f, 0.0f);
+	sunObj->getTransformation().setScale(1.0f);
+	sunObj->setShaderManager(std::make_unique<ConstantShader>(glm::vec3(1.0f, 0.9f, 0.1f)));
+	scene4->addObject(std::move(sunObj));
+
+	// Zemì
+	auto earthObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+	auto earthComposite = earthObj->createCompositeTransformation();
+
+	//kolem slunce
+	auto earthOrbit = earthComposite->createAndAddTransformation();\
+
+	//vzdalenost od zeme
+	auto earthDistance = earthComposite->createAndAddTransformation();
+	earthDistance->setPosition(3.0f, 0.0f, 0.0f);
+
+	//kolem sebe
+	auto earthTransform = earthComposite->createAndAddTransformation();
+	earthTransform->setScale(0.4f);
+
+	earthObj->setShaderManager(std::make_unique<PhongShader>());
+
+	earthObj->onUpdate = [earthOrbit](float deltaTime) {
+		static float earthAngle = 0.0f;
+		earthAngle += 2.0f * deltaTime; // 30 degrees per second
+		if (earthAngle > 360.0f) earthAngle -= 360.0f;
+
+		earthOrbit->setRotation(earthAngle, glm::vec3(0, 1, 0));
+	};
+	scene4->addObject(std::move(earthObj));
+
+
+	auto moonObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+	auto moonComposite = moonObj->createCompositeTransformation();
+	//spolu s zemi
+	auto moonSunOrbit = moonComposite->createAndAddTransformation();
+
+	auto moonBasePosition = moonComposite->createAndAddTransformation();
+	moonBasePosition->setPosition(3.0f, 0.0f, 0.0f);
+
+	//kolem zeme
+	auto moonOrbit = moonComposite->createAndAddTransformation();
+
+	//vzdalenost od zeme
+	auto moonDistance = moonComposite->createAndAddTransformation();
+	moonDistance->setPosition(0.8f, 0.0f, 0.0f);
+
+	//kolem sebe
+	auto moonTransform = moonComposite->createAndAddTransformation();
+	moonTransform->setScale(0.2f);
+
+	moonObj->setShaderManager(std::make_unique<PhongShader>());
+
+	moonObj->onUpdate = [moonSunOrbit,moonOrbit](float deltaTime) {
+		static float earthAngle = 0.0f;
+		static float moonAngle = 0.0f;
+		earthAngle += 2.0f * deltaTime; // 30 degrees per second
+		moonAngle += 8.0f * deltaTime; // 60 degrees per second
+		if (earthAngle > 360.0f) earthAngle -= 360.0f;
+		if (moonAngle > 360.0f) moonAngle -= 360.0f;
+
+
+		moonSunOrbit->setRotation(earthAngle, glm::vec3(0, 1, 0));
+		moonOrbit->setRotation(moonAngle, glm::vec3(0, 1, 0));
+	};
+	scene4->addObject(std::move(moonObj));
+
+	auto light4 = std::make_unique<Light>(
+		glm::vec3(0.0f, 0.0f, 0.0f),  // pozice - stejná jako Slunce
+		glm::vec3(1.0f, 0.9f, 0.7f),  // barva svìtla - teplá žlutá (jako sluneèní svìtlo)
+		2.0f                           // intenzita - vyšší pro lepší osvìtlení
+	);
+	scene4->setLight(std::move(light4));
 
 	scenes.push_back(std::move(scene4));
 
-	// NOVÁ SCÉNA 5 - LES
-	auto forestScene = std::make_unique<Scene>("Forest Scene");
-	generateForest(forestScene.get(), 50, 50); // 50 stromù, 50 keøù
-	scenes.push_back(std::move(forestScene));
 }
 
 Application::Application(int width, int height, const char* title) : 
@@ -310,27 +397,8 @@ void Application::initialize()
 	
 	for (auto& scene:scenes) {
 
-		if (scene->getName() == "Constant Scene") {
-			scene->setShaderManager(std::make_unique<ConstantShader>(glm::vec3(0.0f, 1.0f, 0.0f))); // Zelená
-		}
-		else if (scene->getName() == "Lambert Scene") {
-			scene->setShaderManager(std::make_unique<LambertShader>());
-		}
-		else if (scene->getName() == "Phong Scene") {
-			scene->setShaderManager(std::make_unique<PhongShader>());
-		}
-		else if (scene->getName() == "PhongBlinn Scene") {
-			scene->setShaderManager(std::make_unique<BlinnPhongShader>());
-		}
-		else if (scene->getName() == "Forest Scene") {
-			scene->setShaderManager(std::make_unique<LambertShader>());
-		}
-		scene->init();
 		auto camera = std::make_unique<Camera>();
 		scene->setCamera(std::move(camera));
-
-		auto light = std::make_unique<Light>(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(1.0f, 1.0f, 1.0f),1.0f);
-		scene->setLight(std::move(light));
 
 		std::cout << "Initialized scene: " << scene->getName() << std::endl;
 	}
@@ -342,9 +410,19 @@ void Application::initialize()
 
 void Application::run()
 {
+	double lastTime = glfwGetTime();
+
 	while (!glfwWindowShouldClose(window))
 	{
+		double currentTime = glfwGetTime();
+		float deltaTime = static_cast<float>(currentTime - lastTime);
+		lastTime = currentTime;
+
 		processInput();
+
+		if (currentSceneIndex < scenes.size()) {
+			scenes[currentSceneIndex]->update(deltaTime);
+		}
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

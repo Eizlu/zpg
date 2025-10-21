@@ -5,12 +5,9 @@
 #include <memory>
 #include "camera.h"
 #include "light.h"
-#include "shaderManager.h"
 
 class Scene {
 private:
-	std::unique_ptr<ShaderProgram> shaderProgram;
-	std::unique_ptr<ShaderManager> shaderManager;
 	std::vector<std::unique_ptr<DrawableObject>> objects;
 	std::string name;
 	std::unique_ptr<Camera> camera;
@@ -18,12 +15,10 @@ private:
 public:	
 	Scene(const std::string& sceneName = "Unnamed Scene");
 	~Scene();
-	void init();
+	//void init();
 	void draw( int windowWidth , int windowHeight);
 	void cleanup();
-
-	void setShaderManager(std::unique_ptr<ShaderManager> manager);
-	void applyShaderManager();
+	void update(float deltaTime);
 
 	void addObject(std::unique_ptr<DrawableObject> object);
 	

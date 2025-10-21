@@ -118,7 +118,7 @@ void ShaderProgram::onCameraChanged(const Camera& camera)
 		camera.getUp());
 
 	float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.5f, 200.0f);
 
 	setUniform("view", view);
 	setUniform("projection", projection);
@@ -136,4 +136,10 @@ void ShaderProgram::onLightChanged(const Light& light)
 	setUniform("lightPosition", light.getPosition());
 	setUniform("lightColor", light.getColor());
 	setUniform("lightIntensity", light.getIntensity());
+
+	std::cout << "Light updated in shader - Position: ("
+		<< light.getPosition().x << ", "
+		<< light.getPosition().y << ", "
+		<< light.getPosition().z << "), Intensity: "
+		<< light.getIntensity() << std::endl;
 }

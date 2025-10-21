@@ -12,7 +12,7 @@ public:
 	std::string getVertexShader() const override
 	{
 		return
-			"#version 330\n"
+			"#version 400\n"
 			"layout(location=0) in vec3 vp;" //vertex position
 			"layout(location=1) in vec3 vn;"	//vertex normal
 			"uniform mat4 model;" //model matrix
@@ -29,7 +29,7 @@ public:
 	std::string getFragmentShader() const override
 	{
 		return
-			"#version 330\n"
+			"#version 400\n"
 			"in vec3 worldNorm;" //input from vertex shader
 			"in vec3 worldPos;" //input from vertex shader
 			"out vec4 fragColor;"	//output  fragment color
