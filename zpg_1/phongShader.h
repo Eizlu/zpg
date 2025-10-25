@@ -18,7 +18,7 @@ public:
 			"out vec3 worldNorm;" //output to fragment shader
 			"void main () {"
 			"   worldPos = vec3(model * vec4(vp, 1.0));"
-			"   worldNorm = mat3(transpose(inverse(model))) * vn;"
+			"   worldNorm = normalize(transpose(inverse(mat3(model))) * vn);"
 			"	gl_Position = projection * view * model * vec4(vp, 1.0);"
 			"}";
 	}

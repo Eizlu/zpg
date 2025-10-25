@@ -19,3 +19,4 @@ public:
 
 	glm::mat4 getMatrix() const;
 };
+//upravit

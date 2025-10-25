@@ -201,7 +201,7 @@ void Application::createScenes()
 	triangleObj->setShaderManager(std::make_unique<PhongShader>());
 	scene1->addObject(std::move(triangleObj));
 
-	auto light1 = std::make_unique<Light>(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
+	auto light1 = std::make_unique<Light>(glm::vec3(0.0f, 1.0f, 0.1f), glm::vec3(1.0f, 1.0f, 1.0f), 3.0f);
 	scene1->setLight(std::move(light1));
 
 	scenes.push_back(std::move(scene1));
