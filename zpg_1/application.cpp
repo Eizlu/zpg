@@ -8,10 +8,9 @@
 #include "ground.h"
 #include "triangle.h"
 #include "plain.h"
-#include "lambertShader.h"
-#include "constantShader.h"
-#include "phongShader.h"
-#include "blinnPhongShader.h"
+#include "shaderLoader.h"
+#include "rotation.h"
+#include "pointLight.h"
 
 
 void Application::error_callback(int error, const char* description) {
@@ -56,6 +55,15 @@ void Application::key_callback(GLFWwindow* window, int key, int scancode, int ac
 }
 void Application::window_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
+
+	Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+	if (app) {
+		for (auto& scene : app->scenes) {
+			if (auto camera = scene->getCamera()) {
+				camera->updateAspectRatio(width, height);
+			}
+		}
+	}
 }
 
 void Application::window_focus_callback(GLFWwindow* window, int focused) {
@@ -132,6 +140,15 @@ void Application::processInput()
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 		camera->moveDown();
 
+	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+	{
+		for (auto& light : scenes[currentSceneIndex]->getLights()) {
+			SpotLight* spot = dynamic_cast<SpotLight*>(light.get());
+			if (spot) {
+				spot->setEnabled(!spot->isEnabled());
+			}
+		}
+	}
 }
 
 void Application::switchToScene(int index)
@@ -153,7 +170,8 @@ void Application::generateForest(Scene* scene, int treeCount, int bushCount)
 
 	for(int i = 0; i < treeCount; ++i)
 	{
-		auto treeObj = std::make_unique<DrawableObject>(new Model(tree, sizeof(tree) / sizeof(tree[0])));
+		auto treeModel = new Model(tree, sizeof(tree) / sizeof(tree[0]));
+		auto treeObj = std::make_unique<DrawableObject>(treeModel);
 
 		float x = (rand() % 90 - 45) * 0.1f; // Random x between -1.0 and 1.0
 		float z = (rand() % 90 - 45) * 0.1f; // Random z between -1.0 and 1.0
@@ -161,97 +179,185 @@ void Application::generateForest(Scene* scene, int treeCount, int bushCount)
 		float scale = 0.1f + (rand() % 16) * 0.01f;
 		float rotation = rand() % 360;
 
-		treeObj->getTransformation().setPosition(x, -1.0f, z);
-		treeObj->getTransformation().setScale(scale);
-		treeObj->getTransformation().setRotation(rotation, glm::vec3(0, 1, 0));
-		treeObj->setShaderManager(std::make_unique<LambertShader>());
+		auto composite = treeObj->createCompositeTransformation();
+		composite->addTranslation(x, -1.0f, z);
+		composite->addScale(scale);
+		composite->addRotation(rotation, glm::vec3(0, 1, 0));
 
+		treeObj->applyPhongShader();
 		scene->addObject(std::move(treeObj));
 	}
 
 	for (int i = 0; i < bushCount; i++) {
-		auto bushObj = std::make_unique<DrawableObject>(new Model(bushes, 8730));
+		auto bushModel = new Model(bushes, 8730);
+		auto bushObj = std::make_unique<DrawableObject>(bushModel);
 
 		// Náhodná pozice (trochu jiná distribuce než stromy)
 		float x = (rand() % 90 - 45) * 0.1f;
 		float z = (rand() % 90 - 45) * 0.1f;
 
 		// Keøe jsou menší než stromy
-		float scale = 0.1f + (rand() % 11) * 0.005f; // 0.02f to 0.05f
+		float scale = 0.1f + (rand() % 11) * 0.1f; // 0.02f to 0.05f
 		float rotation = rand() % 360;
 
-		bushObj->getTransformation().setPosition(x, -1.0f, z); // Trochu výše než stromy
-		bushObj->getTransformation().setScale(scale);
-		bushObj->getTransformation().setRotation(rotation, glm::vec3(0, 1, 0));
-		bushObj->setShaderManager(std::make_unique<LambertShader>());
+		auto composite = bushObj->createCompositeTransformation();
+		composite->addTranslation(x, -1.0f, z);
+		composite->addScale(scale);
+		composite->addRotation(rotation, glm::vec3(0, 1, 0));
 
+		bushObj->applyPhongShader();
 		scene->addObject(std::move(bushObj));
 	}
 
 	std::cout << "Forest generation complete!" << std::endl;
 }
 
+void Application::createFireFlies(Scene* scene, int fireFlyCount)
+{
+	struct FireflyData {
+		float time;
+		float speed;
+		float amplitudeX, amplitudeY, amplitudeZ;
+		float freqX, freqY, freqZ;
+		float phaseX, phaseY, phaseZ;
+	};
+
+	for (int i = 0; i < fireFlyCount; i++)
+	{
+		float x = (rand() % 80 - 40) * 0.1f;
+		float y = (rand() % 10) * 0.1f;
+		float z = (rand() % 80 - 40) * 0.1f;
+
+		glm::vec3 fireflyColor(1.0f, 0.9f, 0.2f);
+
+		auto fireflyLight = std::make_unique<PointLight>(glm::vec3(x, y, z), fireflyColor, 0.8f, 5.0f);
+		PointLight* lightPtr = fireflyLight.get(); 
+
+		auto fireflyObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+		auto composite = fireflyObj->createCompositeTransformation();
+		composite->addTranslation(x, y, z);
+		composite->addScale(0.01f);
+		
+		fireflyObj->applyConstantShader(glm::vec3(1.0f, 0.9f, 0.1f));
+
+		FireflyData data;
+		data.time = (rand() % 100) * 0.1f;
+		data.speed =0.1+(rand() % 3) * 0.01f;
+		data.amplitudeX = (rand() % 20) * 0.1f;
+		data.amplitudeY = (rand() % 10) * 0.1f;
+		data.amplitudeZ = (rand() % 20) * 0.1f;
+		data.freqX = 0.2f + (rand() % 10) * 0.05f;
+		data.freqY = 0.3f + (rand() % 10) * 0.05f;
+		data.freqZ = 0.2f + (rand() % 10) * 0.05f;
+		data.phaseX = (rand() % 100) * 0.01f;
+		data.phaseY = (rand() % 100) * 0.01f;
+		data.phaseZ = (rand() % 100) * 0.01f;
+
+		glm::vec3 startPosition(x, y, z);
+
+		DrawableObject* objPtr = fireflyObj.get();
+
+		fireflyObj->onUpdate = [lightPtr, objPtr, startPosition, data](float deltaTime) mutable {
+			data.time += deltaTime * data.speed;
+
+			float newX = startPosition.x + sin(data.time * data.freqX + data.phaseX) * data.amplitudeX;
+			float newZ = startPosition.z + cos(data.time * data.freqZ + data.phaseZ) * data.amplitudeZ;
+			float newY = startPosition.y + sin(data.time * data.freqY + data.phaseY) * data.amplitudeY;
+
+			lightPtr->setPosition(glm::vec3(newX, newY, newZ));
+
+			auto newComposite = std::make_shared<CompositeTransformation>();
+			newComposite->addTranslation(newX, newY, newZ);
+			newComposite->addScale(0.01f);
+
+			objPtr->setCompositeTransformation(newComposite);
+		};
+
+		scene->addObject(std::move(fireflyObj));
+	}
+}
+
 void Application::createScenes()
 {
-	auto scene1 = std::make_unique<Scene>("Triangle Scene");
+	auto scene1 = std::make_unique<Scene>("Ball Scene");
 
+	auto ballObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
+	ballObj->translate(0.0f, 0.0f, 0.0f);
+	ballObj->scale(0.5);
+	ballObj->applyPhongShader();
+	scene1->addObject(std::move(ballObj));
 
-	auto triangleObj = std::make_unique<DrawableObject>(new Triangle());
-	triangleObj->getTransformation().setPosition(0.0f, 0.0f, 0.0f);
-	triangleObj->setShaderManager(std::make_unique<PhongShader>());
-	scene1->addObject(std::move(triangleObj));
-
-	auto light1 = std::make_unique<Light>(glm::vec3(0.0f, 1.0f, 0.1f), glm::vec3(1.0f, 1.0f, 1.0f), 3.0f);
-	scene1->setLight(std::move(light1));
+	auto point1 = std::make_unique<PointLight>(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), 3.0f, 1.0f);
+	scene1->setLight(std::move(point1));
 
 	scenes.push_back(std::move(scene1));
 
+
+
 	auto scene2 = std::make_unique<Scene>("Spheres Scene");
 
-
 	auto sphereObj1 = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
-	sphereObj1->getTransformation().setPosition(-1.0f, 1.0f, -3.0f);
-	sphereObj1->getTransformation().setScale(0.5f);
-	sphereObj1->setShaderManager(std::make_unique<PhongShader>());
+	sphereObj1->translate(-1.0f, 0.0f, 0.0f);
+	sphereObj1->scale(0.5f);
+	sphereObj1->applyPhongShader();
 	scene2->addObject(std::move(sphereObj1));
 
 	auto sphereObj2 = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
-	sphereObj2->getTransformation().setPosition(1.0f, 1.0f, -3.0f);
-	sphereObj2->getTransformation().setScale(0.5f);
-	sphereObj2->setShaderManager(std::make_unique<PhongShader>());
+	sphereObj2->translate(0.0f, 1.0f, 0.0f);
+	sphereObj2->scale(0.5f);
+	sphereObj2->applyPhongShader();
 	scene2->addObject(std::move(sphereObj2));
 
 	auto sphereObj3 = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
-	sphereObj3->getTransformation().setPosition(-1.0f, -1.0f, -3.0f);
-	sphereObj3->getTransformation().setScale(0.5f);
-	sphereObj3->setShaderManager(std::make_unique<PhongShader>());
+	sphereObj3->translate(1.0f, 0.0f, 0.0f);
+	sphereObj3->scale(0.5f);
+	sphereObj3->applyPhongShader();
 	scene2->addObject(std::move(sphereObj3));
 
 	auto sphereObj4 = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
-	sphereObj4->getTransformation().setPosition(1.0f, -1.0f, -3.0f);
-	sphereObj4->getTransformation().setScale(0.5f);
-	sphereObj4->setShaderManager(std::make_unique<PhongShader>());
+	sphereObj4->translate(0.0f, -1.0f, 0.0f);
+	sphereObj4->scale(0.5f);
+	sphereObj4->applyPhongShader();
 	scene2->addObject(std::move(sphereObj4));
 
-	auto light2 = std::make_unique<Light>(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.5f);
-	scene2->setLight(std::move(light2));
+	auto point2 = std::make_unique<PointLight>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 2.0f, 1.0f);
+	scene2->setLight(std::move(point2));
 
 	scenes.push_back(std::move(scene2));
+
 
 
 	auto forestScene = std::make_unique<Scene>("Forest Scene");
 
 
 	auto groundObj = std::make_unique<DrawableObject>(new Model(plain, sizeof(plain) / sizeof(plain[0])));
-	groundObj->getTransformation().setPosition(0.0f, -1.0f, 0.0f);
-	groundObj->getTransformation().setScale(5.0f); // zvìtšení plochy
-	groundObj->setShaderManager(std::make_unique<ConstantShader>(glm::vec3(0.07f, 0.31f, 0.09f)));
+	groundObj->translate(0.0f, -1.0f, 0.0f);
+	groundObj->scale(5.0f); // zvìtšení plochy
+	groundObj->applyConstantShader(glm::vec3(0.07f, 0.31f, 0.09f));
 	forestScene->addObject(std::move(groundObj));
 
 	generateForest(forestScene.get(), 50, 50); // 50 stromù, 50 keøù
 	
-	auto light3 = std::make_unique<Light>(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
-	forestScene->setLight(std::move(light3));
+	auto moonLight = std::make_unique<PointLight>(
+		glm::vec3(0.0f, 10.0f, 5.0f),
+		glm::vec3(0.7f, 0.7f, 1.0f),  
+		0.1f,                         
+		0.1f                          
+	);
+	forestScene->setLight(std::move(moonLight));
+
+	createFireFlies(forestScene.get(), 6);
+
+	auto flashlight = std::make_unique<SpotLight>(
+		glm::vec3(0.0f, 0.0f, 0.0f),   // pozice se bude aktualizovat podle kamery
+		glm::vec3(0.0f, 0.0f, -1.0f),  // smìr se bude aktualizovat podle kamery
+		glm::vec3(1.0f, 1.0f, 0.9f),   // barva svìtla
+		1.5f,                           // intenzita
+		0.05f,                          // attenuation
+		20.0f                           // cutoff (v°)
+	);
+	flashlight->setEnabled(false);  // zaèíná vypnutá
+	forestScene->addLight(std::move(flashlight));
 	
 	scenes.push_back(std::move(forestScene));
 
@@ -260,9 +366,9 @@ void Application::createScenes()
 
 	// Slunce
 	auto sunObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
-	sunObj->getTransformation().setPosition(0.0f, 0.0f, 0.0f);
-	sunObj->getTransformation().setScale(1.0f);
-	sunObj->setShaderManager(std::make_unique<ConstantShader>(glm::vec3(1.0f, 0.9f, 0.1f)));
+	sunObj->translate(0.0f, 0.0f, 0.0f);
+	sunObj->scale(1.0f);
+	sunObj->applyConstantShader(glm::vec3(1.0f, 0.9f, 0.1f));
 	scene4->addObject(std::move(sunObj));
 
 	// Zemì
@@ -270,69 +376,50 @@ void Application::createScenes()
 	auto earthComposite = earthObj->createCompositeTransformation();
 
 	//kolem slunce
-	auto earthOrbit = earthComposite->createAndAddTransformation();\
+	auto earthOrbit = std::make_shared<Rotation>(0.0f, glm::vec3(0, 1, 0));
+	earthComposite->addTransformation(earthOrbit);
+	earthComposite->addTranslation(3.0f, 0.0f, 0.0f);
+	earthComposite->addRotation(0.0f, glm::vec3(0, 1, 0));
+	earthComposite->addScale(0.4f);
 
-	//vzdalenost od zeme
-	auto earthDistance = earthComposite->createAndAddTransformation();
-	earthDistance->setPosition(3.0f, 0.0f, 0.0f);
-
-	//kolem sebe
-	auto earthTransform = earthComposite->createAndAddTransformation();
-	earthTransform->setScale(0.4f);
-
-	earthObj->setShaderManager(std::make_unique<PhongShader>());
+	earthObj->applyPhongShader();
 
 	earthObj->onUpdate = [earthOrbit](float deltaTime) {
 		static float earthAngle = 0.0f;
-		earthAngle += 2.0f * deltaTime; // 30 degrees per second
+		earthAngle += 1.0f * deltaTime; // 30 degrees per second
 		if (earthAngle > 360.0f) earthAngle -= 360.0f;
-
-		earthOrbit->setRotation(earthAngle, glm::vec3(0, 1, 0));
+		earthOrbit->setAngle(earthAngle);
 	};
 	scene4->addObject(std::move(earthObj));
 
 
 	auto moonObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
 	auto moonComposite = moonObj->createCompositeTransformation();
-	//spolu s zemi
-	auto moonSunOrbit = moonComposite->createAndAddTransformation();
 
-	auto moonBasePosition = moonComposite->createAndAddTransformation();
-	moonBasePosition->setPosition(3.0f, 0.0f, 0.0f);
+	auto moonEarthOrbit = std::make_shared<Rotation>(0.0f, glm::vec3(0, 1, 0));
+	moonComposite->addTransformation(earthOrbit); 
+	moonComposite->addTranslation(3.0f, 0.0f, 0.0f);
+	moonComposite->addTransformation(moonEarthOrbit);
+	moonComposite->addTranslation(0.8f, 0.0f, 0.0f);
+	moonComposite->addScale(0.2f);
 
-	//kolem zeme
-	auto moonOrbit = moonComposite->createAndAddTransformation();
+	moonObj->applyPhongShader();
 
-	//vzdalenost od zeme
-	auto moonDistance = moonComposite->createAndAddTransformation();
-	moonDistance->setPosition(0.8f, 0.0f, 0.0f);
-
-	//kolem sebe
-	auto moonTransform = moonComposite->createAndAddTransformation();
-	moonTransform->setScale(0.2f);
-
-	moonObj->setShaderManager(std::make_unique<PhongShader>());
-
-	moonObj->onUpdate = [moonSunOrbit,moonOrbit](float deltaTime) {
-		static float earthAngle = 0.0f;
+	moonObj->onUpdate = [moonEarthOrbit](float deltaTime) {
 		static float moonAngle = 0.0f;
-		earthAngle += 2.0f * deltaTime; // 30 degrees per second
 		moonAngle += 8.0f * deltaTime; // 60 degrees per second
-		if (earthAngle > 360.0f) earthAngle -= 360.0f;
 		if (moonAngle > 360.0f) moonAngle -= 360.0f;
-
-
-		moonSunOrbit->setRotation(earthAngle, glm::vec3(0, 1, 0));
-		moonOrbit->setRotation(moonAngle, glm::vec3(0, 1, 0));
+		moonEarthOrbit->setAngle(moonAngle);
 	};
 	scene4->addObject(std::move(moonObj));
 
-	auto light4 = std::make_unique<Light>(
-		glm::vec3(0.0f, 0.0f, 0.0f),  // pozice - stejná jako Slunce
-		glm::vec3(1.0f, 0.9f, 0.7f),  // barva svìtla - teplá žlutá (jako sluneèní svìtlo)
-		2.0f                           // intenzita - vyšší pro lepší osvìtlení
+	auto sun = std::make_unique<PointLight>(
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(1.0f, 0.9f, 0.7f),  
+		2.0f,
+		0.0f
 	);
-	scene4->setLight(std::move(light4));
+	scene4->setLight(std::move(sun));
 
 	scenes.push_back(std::move(scene4));
 
@@ -397,8 +484,12 @@ void Application::initialize()
 	
 	for (auto& scene:scenes) {
 
-		auto camera = std::make_unique<Camera>();
+		auto camera = std::make_unique<Camera>(width, height);  
 		scene->setCamera(std::move(camera));
+
+		/*if (auto light = scene->getLight()) {
+			light->notifyObservers();
+		}*/
 
 		std::cout << "Initialized scene: " << scene->getName() << std::endl;
 	}

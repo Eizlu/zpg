@@ -1,6 +1,7 @@
 #include "camera.h"
 #include <glm/ext/matrix_transform.hpp>
 #include <algorithm>
+#include <glm/ext/matrix_clip_space.hpp>
 
 Camera::Camera() :
 	position(0.0f, 0.0f, 3.0f), 
@@ -10,9 +11,48 @@ Camera::Camera() :
 	worldUp(0.0f, 1.0f, 0.0f),
 	yaw(-90.0f), 
 	pitch(0.0f), 
-	mouseSensitivity(0.1f)
+	mouseSensitivity(0.1f),
+	aspectRatio(16.0f / 9.0f), 
+	fov(45.0f),
+	nearPlane(0.1f),
+	farPlane(100.0f)
 {
 	updateVector();
+	updateProjectionMatrix();
+}
+
+Camera::Camera(int screenWidth, int screenHeight) :
+	position(0.0f, 0.0f, 3.0f),
+	front(0.0f, 0.0f, -1.0f),
+	up(0.0f, 1.0f, 0.0f),
+	movementSpeed(0.1f),
+	worldUp(0.0f, 1.0f, 0.0f),
+	yaw(-90.0f),
+	pitch(0.0f),
+	mouseSensitivity(0.1f),
+	fov(45.0f),
+	nearPlane(0.1f),
+	farPlane(100.0f)
+{
+	updateAspectRatio(screenWidth, screenHeight); 
+	updateVector();
+}
+
+void Camera::updateProjectionMatrix()
+{
+	projectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
+	notifyObservers(); 
+}
+
+void Camera::updateAspectRatio(int width, int height)
+{
+	aspectRatio = (float)width / (float)height;
+	updateProjectionMatrix();
+}
+
+glm::mat4 Camera::getProjectionMatrix() const
+{
+	return projectionMatrix;
 }
 
 void Camera::updateVector()
@@ -117,19 +157,8 @@ void Camera::setMouseSensitivity(float sensitivity)
 	mouseSensitivity = sensitivity;
 }
 
-void Camera::addObserver(CameraObserver* observer)
+void Camera::setFOV(float newFov)
 {
-	observers.push_back(observer);
-}
-
-void Camera::removeObserver(CameraObserver* observer)
-{
-	observers.erase(std::remove(observers.begin(), observers.end(), observer ), observers.end());
-}
-
-void Camera::notifyObservers()
-{
-	for (auto observer : observers) {
-		observer->onCameraChanged(*this);
-	}
+	fov = newFov;
+	updateProjectionMatrix();
 }

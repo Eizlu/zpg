@@ -1,10 +1,11 @@
 #pragma once
 #include <glm/ext/vector_float3.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
 #include <glm/fwd.hpp>
 #include <vector>
-#include "cameraObserver.h"
+#include "subject.h"
 
-class Camera
+class Camera : public Subject
 {
 private:
 	glm::vec3 position;
@@ -12,17 +13,22 @@ private:
 	glm::vec3 up;
 	glm::vec3 right;
 	glm::vec3 worldUp;
-	//glm::mat4 viewMatrix;
-	//glm::mat4 projectionMatrix;
+	
+	glm::mat4 projectionMatrix;
+	float aspectRatio;
+	float fov;
+	float nearPlane;
+	float farPlane;
+
 
 	float movementSpeed;
 	float yaw, pitch;
 	float mouseSensitivity;
 
-	std::vector<CameraObserver*> observers;
-
+	void updateProjectionMatrix();
 public:
 	Camera();
+	Camera(int screenWidth, int screenHeight);
 	~Camera()=default;
 	glm::mat4 LookAt(glm::vec3 eye, glm::vec3 center, glm::vec3 up) const;
 
@@ -30,6 +36,7 @@ public:
 	glm::vec3 getFront() const;
 	glm::vec3 getUp() const;
 	glm::vec3 getRight() const;
+	glm::mat4 getProjectionMatrix() const;
 	void updateVector();
 
 	void moveForward();
@@ -41,13 +48,11 @@ public:
 
 	void setMovementSpeed(float speed);
 
+	void updateAspectRatio(int width, int height);
+	void setFOV(float newFov);
+
 	//mys
 	void processMouseMovement(float xOffset, float yOffset, bool constrainPitch = true);
 	void setMouseSensitivity(float sensitivity);
-
-	void addObserver(CameraObserver* observer);
-	void removeObserver(CameraObserver* observer);
-	void notifyObservers();
-
 };
 

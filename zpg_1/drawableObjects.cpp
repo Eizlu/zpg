@@ -1,4 +1,5 @@
 #include "drawableObject.h"
+#include "shaderLoader.h"
 
 DrawableObject::DrawableObject(Model* model)
 	: model(model), compositeTransformation(nullptr)
@@ -15,6 +16,43 @@ void DrawableObject::update(float deltaTime)
 	onUpdate(deltaTime);
 }
 
+void DrawableObject::translate(float x, float y, float z)
+{
+	if (!compositeTransformation)
+		createCompositeTransformation();
+	compositeTransformation->addTranslation(x, y, z);
+}
+
+void DrawableObject::scale(float sx, float sy, float sz)
+{
+	compositeTransformation->addScale(sx, sy, sz);
+}
+
+void DrawableObject::scale(float uniformScale)
+{
+	compositeTransformation->addScale(uniformScale);
+}
+
+void DrawableObject::rotate(float angle, const glm::vec3& axis)
+{
+	compositeTransformation->addRotation(angle, axis);
+}
+
+void DrawableObject::rotateEuler(float angleX, float angleY, float angleZ)
+{
+	compositeTransformation->addRotationEuler(angleX, angleY, angleZ);
+}
+
+void DrawableObject::rotateAroundPoint(const glm::vec3& point, float angle, const glm::vec3& axis)
+{
+	compositeTransformation->addRotationAroundPoint(point, angle, axis);
+}
+
+std::shared_ptr<CompositeTransformation> DrawableObject::getCompositeTransformation()
+{
+	return compositeTransformation;
+}
+
 std::shared_ptr<CompositeTransformation> DrawableObject::createCompositeTransformation()
 {
 	compositeTransformation = std::make_shared<CompositeTransformation>();
@@ -26,40 +64,58 @@ void DrawableObject::setCompositeTransformation(std::shared_ptr<CompositeTransfo
 	compositeTransformation = composite;
 }
 
-void DrawableObject::setShaderManager(std::unique_ptr<ShaderManager> manager)
+bool DrawableObject::hasCompositeTransformation() const
 {
-	shaderManager = std::move(manager);
-	applyShaderManager();
-}
-
-void DrawableObject::applyShaderManager()
-{
-	if (shaderManager)
-	{
-		shaderProgram = std::make_unique<ShaderProgram>(
-			shaderManager->getVertexShader().c_str(),
-			shaderManager->getFragmentShader().c_str()
-		);
-		shaderManager->setupUniforms(*shaderProgram);
-	}
+	return compositeTransformation != nullptr;
 }
 
 void DrawableObject::draw()
 {
-	if (!shaderProgram) {
-		// Fallback - použít nìjaký defaultní shader
+	if (!shaderProgram || !compositeTransformation)
 		return;
-	}
 
 	shaderProgram->use();
 
-	if (compositeTransformation)
-	{
-		shaderProgram->setUniform("model", compositeTransformation->getMatrix());
-	}
-	else
-	{
-		shaderProgram->setUniform("model", transformation.getMatrix());
-	}
+	shaderProgram->setUniform("model", compositeTransformation->getMatrix());
+
+	if (shaderManager)
+		shaderManager->setupUniforms(*shaderProgram);
+
 	model->draw();
+}
+
+void DrawableObject::applyPhongShader()
+{
+	std::string vertex = loadShaderFromFile("shaders/phong.vert");
+	std::string fragment = loadShaderFromFile("shaders/phong.frag");
+
+	shaderProgram = std::make_unique<ShaderProgram>(vertex.c_str(), fragment.c_str());
+}
+
+void DrawableObject::applyBlinnPhongShader()
+{
+	std::string vertex = loadShaderFromFile("shaders/blinnPhong.vert");
+	std::string fragment = loadShaderFromFile("shaders/blinnPhong.frag");
+
+	shaderProgram = std::make_unique<ShaderProgram>(vertex.c_str(), fragment.c_str());
+}
+
+void DrawableObject::applyLambertShader()
+{
+	std::string vertex = loadShaderFromFile("shaders/lambert.vert");
+	std::string fragment = loadShaderFromFile("shaders/lambert.frag");
+
+	shaderProgram = std::make_unique<ShaderProgram>(vertex.c_str(), fragment.c_str());
+}
+
+void DrawableObject::applyConstantShader(const glm::vec3& color)
+{
+	std::string vertex = loadShaderFromFile("shaders/constant.vert");
+	std::string fragment = loadShaderFromFile("shaders/constant.frag");
+
+	shaderProgram = std::make_unique<ShaderProgram>(vertex.c_str(), fragment.c_str());
+
+	// Pokud shader potøebuje uniform "objectColor" (nebo jak jsi ho nazvala):
+	shaderProgram->use();
+	shaderProgram->setUniform("objectColor", color);
 }

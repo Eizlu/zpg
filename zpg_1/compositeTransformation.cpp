@@ -1,37 +1,76 @@
 #include "compositeTransformation.h"
+#include "translation.h"
+#include "scale.h"
+#include "rotation.h"
+#include "rotationEuler.h"
+#include "rotationAroundPoint.h"
 
 CompositeTransformation::CompositeTransformation()
 {
-
 }
 
-void CompositeTransformation::addTransformation(const std::shared_ptr<Transformation>& transformation) {
-	transformations.push_back(transformation);
-}
-
-std::shared_ptr<Transformation> CompositeTransformation::createAndAddTransformation() {
-	auto transformation = std::make_shared<Transformation>();
-	transformations.push_back(transformation);
-	return transformation;
-}
-
-
-glm::mat4 CompositeTransformation::getMatrix() const {
-	glm::mat4 compositeMatrix(1.0f);
-
-	for (const auto& transformation : transformations) {
-		compositeMatrix = compositeMatrix * transformation->getMatrix();
+CompositeTransformation::CompositeTransformation(const CompositeTransformation& other)
+{
+	for (const auto& transformation : other.transformations)
+	{
+		transformations.push_back(std::shared_ptr<Transformation>(transformation->clone()));
 	}
-	return compositeMatrix;
 }
 
-size_t CompositeTransformation::getTransformationCount() const {
+void CompositeTransformation::addTranslation(float x, float y, float z)
+{
+	transformations.push_back(std::make_shared<Translation>(x, y, z));
+}
+
+void CompositeTransformation::addScale(float sx, float sy, float sz)
+{
+	transformations.push_back(std::make_shared<Scale>(sx, sy, sz));
+}
+
+void CompositeTransformation::addScale(float uniformScale)
+{
+	transformations.push_back(std::make_shared<Scale>(uniformScale));
+}
+
+void CompositeTransformation::addRotation(float angle, const glm::vec3& axis)
+{
+	transformations.push_back(std::make_shared<Rotation>(angle, axis));
+}
+
+void CompositeTransformation::addRotationEuler(float angleX, float angleY, float angleZ)
+{
+	transformations.push_back(std::make_shared<RotationEuler>(angleX, angleY, angleZ));
+}
+
+void CompositeTransformation::addRotationAroundPoint(const glm::vec3& point, float angle, const glm::vec3& axis)
+{
+	transformations.push_back(std::make_shared<RotationAroundPoint>(point, angle, axis));
+}
+
+void CompositeTransformation::addTransformation(const std::shared_ptr<Transformation>& transformation)
+{
+	transformations.push_back(transformation);
+}
+
+glm::mat4 CompositeTransformation::getMatrix() const
+{
+	glm::mat4 result(1.0f);
+	for (const auto& transformation : transformations)
+	{
+		result = result * transformation->getMatrix();
+	}
+	return result;
+}
+
+size_t CompositeTransformation::getTransformationCount() const
+{
 	return transformations.size();
 }
 
-std::shared_ptr<Transformation> CompositeTransformation::getTransformation(size_t index) const {
+Transformation* CompositeTransformation::getTransformation(size_t index) const
+{
 	if (index < transformations.size()) {
-		return transformations[index];
+		return transformations[index].get();
 	}
 	return nullptr;
 }

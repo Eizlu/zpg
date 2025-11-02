@@ -5,7 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-ShaderProgram::ShaderProgram(const char* vertexSource, const char* fragmentSource) : windowWidth(1200), windowHeight(800)
+ShaderProgram::ShaderProgram(const char* vertexSource, const char* fragmentSource) 
 {
 
 	std::cout << "Compiling vertex shader..." << std::endl;
@@ -53,11 +53,11 @@ void ShaderProgram::use() const
 	glUseProgram(programID);
 }
 
-void ShaderProgram::setWindowSize(int width, int height)
-{
-	windowWidth = width;
-	windowHeight = height;
-}
+//void ShaderProgram::setWindowSize(int width, int height)
+//{
+//	windowWidth = width;
+//	windowHeight = height;
+//}
 
 //matice
 void ShaderProgram::setUniform(const std::string& name, const glm::mat4& value) const
@@ -106,40 +106,19 @@ void ShaderProgram::setUniform(const std::string& name, bool value) const
 		glUniform1i(location, value ? 1 : 0);
 	}
 }
-
-void ShaderProgram::onCameraChanged(const Camera& camera)
-{
-	use();
-
-	viewPosition = camera.getPosition();
-
-	glm::mat4 view = camera.LookAt(camera.getPosition(),
-		camera.getPosition() + camera.getFront(),
-		camera.getUp());
-
-	float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.5f, 200.0f);
-
-	setUniform("view", view);
-	setUniform("projection", projection);
-	setUniform("viewPos", viewPosition);
-
-	std::cout << "Camera updated in shader - Position: ("
-		<< camera.getPosition().x << ", "
-		<< camera.getPosition().y << ", "
-		<< camera.getPosition().z << ")" << std::endl;
+void ShaderProgram::onSubjectChanged() {
 }
 
-void ShaderProgram::onLightChanged(const Light& light)
-{
-	use();
-	setUniform("lightPosition", light.getPosition());
-	setUniform("lightColor", light.getColor());
-	setUniform("lightIntensity", light.getIntensity());
 
-	std::cout << "Light updated in shader - Position: ("
-		<< light.getPosition().x << ", "
-		<< light.getPosition().y << ", "
-		<< light.getPosition().z << "), Intensity: "
-		<< light.getIntensity() << std::endl;
+void ShaderProgram::setViewMatrix(const glm::mat4& view) { setUniform("view", view); }
+void ShaderProgram::setProjectionMatrix(const glm::mat4& proj) { setUniform("projection", proj); }
+void ShaderProgram::setViewPosition(const glm::vec3& pos) { setUniform("viewPos", pos); }
+
+void ShaderProgram::setLightData(int index, const glm::vec3& pos,
+	const glm::vec3& color, float intensity, float attenuation)
+{
+	setUniform("lights[" + std::to_string(index) + "].position", pos);
+	setUniform("lights[" + std::to_string(index) + "].color", color);
+	setUniform("lights[" + std::to_string(index) + "].intensity", intensity);
+	setUniform("lights[" + std::to_string(index) + "].attenuation", attenuation);
 }

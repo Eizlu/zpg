@@ -127,41 +127,57 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ambientLight.cpp" />
     <ClCompile Include="application.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="compositeTransformation.cpp" />
+    <ClCompile Include="directionalLight.cpp" />
     <ClCompile Include="drawableObjects.cpp" />
-    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="pointLight.cpp" />
+    <ClCompile Include="rotation.cpp" />
+    <ClCompile Include="rotationAroundPoint.cpp" />
+    <ClCompile Include="rotationEuler.cpp" />
+    <ClCompile Include="scale.cpp" />
     <ClCompile Include="scene.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="shaderLoader.cpp" />
     <ClCompile Include="shaderProgram.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="shaderProgram.h" />
+    <ClCompile Include="spotLight.cpp" />
     <ClCompile Include="square.cpp" />
     <ClCompile Include="transformation.cpp" />
+    <ClCompile Include="translation.cpp" />
     <ClCompile Include="triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ambientLight.h" />
     <ClInclude Include="application.h" />
-    <ClInclude Include="blinnPhongShader.h" />
     <ClInclude Include="camera.h" />
-    <ClInclude Include="cameraObserver.h" />
+    <ClInclude Include="directionalLight.h" />
+    <ClInclude Include="observer.h" />
     <ClInclude Include="compositeTransformation.h" />
-    <ClInclude Include="constantShader.h" />
     <ClInclude Include="drawableObject.h" />
-    <ClInclude Include="lambertShader.h" />
     <ClInclude Include="light.h" />
-    <ClInclude Include="lightObserver.h" />
     <ClInclude Include="model.h" />
-    <ClInclude Include="phongShader.h" />
+    <ClInclude Include="pointLight.h" />
+    <ClInclude Include="rotation.h" />
+    <ClInclude Include="rotationAroundPoint.h" />
+    <ClInclude Include="rotationEuler.h" />
+    <ClInclude Include="scale.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="shaderLoader.h" />
     <ClInclude Include="shaderManager.h" />
+    <ClInclude Include="spotLight.h" />
     <ClInclude Include="square.h" />
+    <ClInclude Include="subject.h" />
     <ClInclude Include="transformation.h" />
+    <ClInclude Include="translation.h" />
     <ClInclude Include="triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

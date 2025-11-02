@@ -4,17 +4,15 @@
 #include "shader.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "cameraObserver.h"
-#include "lightObserver.h"
+#include "observer.h"
 
 
-class ShaderProgram : public CameraObserver, public LightObserver
+class ShaderProgram : public Observer
 {
 private:
 	GLuint programID;
-	int windowWidth;
-	int windowHeight;
-	glm::vec3 viewPosition;
+	//int windowWidth;
+	//int windowHeight;
 public:
 	ShaderProgram(const char* vertexSource, const char* fragmentSource);
 	~ShaderProgram();
@@ -26,10 +24,13 @@ public:
 	void setUniform(const std::string& name, int value) const;
 	void setUniform(const std::string& name, bool value) const;
 
-	void setWindowSize(int width, int height);
+	//void setWindowSize(int width, int height);
+	void onSubjectChanged() override;
 
-	void onCameraChanged(const Camera& camera) override;
-	void onLightChanged(const Light& light) override; 
 
-	void setViewPosition(const glm::vec3& viewPos) { viewPosition = viewPos; };
+	void setViewMatrix(const glm::mat4& view);
+	void setProjectionMatrix(const glm::mat4& proj);
+	void setViewPosition(const glm::vec3& pos);
+	void setLightData(int index, const glm::vec3& pos,
+		const glm::vec3& color, float intensity, float attenuation);
 };

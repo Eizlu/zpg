@@ -2,16 +2,14 @@
 #include <GL/glew.h> 
 #include <GLFW/glfw3.h>
 #include "scene.h"
+#include "spotLight.h"
 
 
 class Application
 {
-	//inicializace okna a OpenGL
 private:
 	GLFWwindow* window;
 	std::vector<std::unique_ptr<Scene>> scenes;
-	//Camera* mainCamera;
-	//std::unique_ptr<Camera> mainCamera;
 	int currentSceneIndex;
 	int width;
 	int height;
@@ -31,6 +29,7 @@ private:
 
 	void createScenes();
 	void generateForest(Scene* scene, int treeCount, int bushCount);
+	void createFireFlies(Scene* scene, int numFireFlies);
 	void switchToScene(int index);
 	void processInput();
 public:
