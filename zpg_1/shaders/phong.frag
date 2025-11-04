@@ -9,6 +9,7 @@ struct Light {
     float intensity;
     float attenuation; 
     float cutoff;      
+    int enabled;
 };
 
 
@@ -47,6 +48,7 @@ void main() {
         float distance = length(lights[i].position - worldPos);
         attenuation = calculateAttenuation(distance, lights[i].attenuation);
     } else if(lights[i].type == 3) { // spot
+	if(lights[i].enabled == 0) continue;
         lightDir = normalize(lights[i].position - worldPos);
         float distance = length(lights[i].position - worldPos);
         attenuation = calculateAttenuation(distance, lights[i].attenuation);

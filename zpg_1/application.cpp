@@ -48,6 +48,18 @@ void Application::key_callback(GLFWwindow* window, int key, int scancode, int ac
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
+		else if (key == GLFW_KEY_F) {
+			Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+
+			for (auto& light : app->scenes[app->currentSceneIndex]->getLights()) {
+				SpotLight* spot = dynamic_cast<SpotLight*>(light.get());
+				if (spot) {
+					bool newState = !spot->isEnabled();
+					spot->setEnabled(newState);
+					std::cout << (newState ? "Flashlight ON" : "Flashlight OFF") << std::endl;
+				}
+			}
+		}
 		else {
 			std::cout << "Unknown key - try keys 1, 2, or 3" << std::endl;
 		}
@@ -140,15 +152,6 @@ void Application::processInput()
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 		camera->moveDown();
 
-	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
-	{
-		for (auto& light : scenes[currentSceneIndex]->getLights()) {
-			SpotLight* spot = dynamic_cast<SpotLight*>(light.get());
-			if (spot) {
-				spot->setEnabled(!spot->isEnabled());
-			}
-		}
-	}
 }
 
 void Application::switchToScene(int index)
@@ -232,6 +235,7 @@ void Application::createFireFlies(Scene* scene, int fireFlyCount)
 
 		auto fireflyLight = std::make_unique<PointLight>(glm::vec3(x, y, z), fireflyColor, 0.8f, 5.0f);
 		PointLight* lightPtr = fireflyLight.get(); 
+		scene->addLight(std::move(fireflyLight));
 
 		auto fireflyObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
 		auto composite = fireflyObj->createCompositeTransformation();
@@ -354,7 +358,7 @@ void Application::createScenes()
 		glm::vec3(1.0f, 1.0f, 0.9f),   // barva svìtla
 		1.5f,                           // intenzita
 		0.05f,                          // attenuation
-		20.0f                           // cutoff (v°)
+		10.0f                           // cutoff (v°)
 	);
 	flashlight->setEnabled(false);  // zaèíná vypnutá
 	forestScene->addLight(std::move(flashlight));
@@ -487,10 +491,6 @@ void Application::initialize()
 		auto camera = std::make_unique<Camera>(width, height);  
 		scene->setCamera(std::move(camera));
 
-		/*if (auto light = scene->getLight()) {
-			light->notifyObservers();
-		}*/
-
 		std::cout << "Initialized scene: " << scene->getName() << std::endl;
 	}
 
@@ -516,6 +516,18 @@ void Application::run()
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		if (currentSceneIndex == 2) { // forest scene
+			auto& lights = scenes[currentSceneIndex]->getLights();
+			for (auto& light : lights) {
+				SpotLight* spot = dynamic_cast<SpotLight*>(light.get());
+				if (spot) {
+					Camera* camera = scenes[currentSceneIndex]->getCamera();
+					spot->setPosition(camera->getPosition());
+					spot->setDirection(camera->getFront());
+				}
+			}
+		}
 
 		// Vykreslení aktuální scény
 		if (currentSceneIndex < scenes.size()) {
