@@ -78,10 +78,14 @@ void DrawableObject::draw()
 
 	shaderProgram->setUniform("model", compositeTransformation->getMatrix());
 
+	model->applyMaterialToShader(shaderProgram.get());
+
 	if (shaderManager)
 		shaderManager->setupUniforms(*shaderProgram);
 
 	model->draw();
+
+	glUseProgram(0);
 }
 
 void DrawableObject::applyPhongShader()
@@ -90,6 +94,7 @@ void DrawableObject::applyPhongShader()
 	std::string fragment = loadShaderFromFile("shaders/phong.frag");
 
 	shaderProgram = std::make_unique<ShaderProgram>(vertex.c_str(), fragment.c_str());
+
 }
 
 void DrawableObject::applyBlinnPhongShader()

@@ -1,16 +1,10 @@
 #include "application.h"
 #include <iostream>
-#include "tree.h"
-#include "sphere.h"
-#include "suzi_flat.h"
-#include "suzi_smooth.h"
-#include "bushes.h"
-#include "ground.h"
-#include "triangle.h"
-#include "plain.h"
+#include "models/models.h"
 #include "shaderLoader.h"
 #include "rotation.h"
 #include "pointLight.h"
+#include "ambientLight.h"
 
 
 void Application::error_callback(int error, const char* description) {
@@ -283,15 +277,19 @@ void Application::createFireFlies(Scene* scene, int fireFlyCount)
 
 void Application::createScenes()
 {
-	auto scene1 = std::make_unique<Scene>("Ball Scene");
+	auto scene1 = std::make_unique<Scene>("Shrek Scene");
 
-	auto ballObj = std::make_unique<DrawableObject>(new Model(sphere, sizeof(sphere) / sizeof(sphere[0])));
-	ballObj->translate(0.0f, 0.0f, 0.0f);
-	ballObj->scale(0.5);
-	ballObj->applyPhongShader();
-	scene1->addObject(std::move(ballObj));
+	auto shrekModel = new Model("shrek/shrek.obj");
+	auto shrekObj = std::make_unique<DrawableObject>(shrekModel);
+	shrekObj->translate(0.0f, -0.5f, 0.0f);
+	shrekObj->scale(0.5);
+	shrekObj->applyPhongShader();
+	scene1->addObject(std::move(shrekObj));
 
-	auto point1 = std::make_unique<PointLight>(glm::vec3(0.0f, 0.0f, -3.0f), glm::vec3(1.0f, 1.0f, 1.0f), 3.0f, 1.0f);
+	auto ambient1 = std::make_unique<AmbientLight>(glm::vec3(1.0f, 1.0f, 1.0f), 0.5f);
+	scene1->setLight(std::move(ambient1));
+
+	auto point1 = std::make_unique<PointLight>(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(1.0f, 1.0f, 1.0f), 3.0f, 1.0f);
 	scene1->setLight(std::move(point1));
 
 	scenes.push_back(std::move(scene1));
@@ -337,7 +335,7 @@ void Application::createScenes()
 	auto groundObj = std::make_unique<DrawableObject>(new Model(plain, sizeof(plain) / sizeof(plain[0])));
 	groundObj->translate(0.0f, -1.0f, 0.0f);
 	groundObj->scale(5.0f); // zvìtšení plochy
-	groundObj->applyConstantShader(glm::vec3(0.07f, 0.31f, 0.09f));
+	groundObj->applyConstantShader(glm::vec3(0.0157f, 0.149f, 0.051f));
 	forestScene->addObject(std::move(groundObj));
 
 	generateForest(forestScene.get(), 50, 50); // 50 stromù, 50 keøù

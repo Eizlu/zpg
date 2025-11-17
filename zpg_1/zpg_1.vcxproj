@@ -149,10 +149,8 @@
     </ClCompile>
     <ClCompile Include="shaderProgram.h" />
     <ClCompile Include="spotLight.cpp" />
-    <ClCompile Include="square.cpp" />
     <ClCompile Include="transformation.cpp" />
     <ClCompile Include="translation.cpp" />
-    <ClCompile Include="triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ambientLight.h" />
@@ -174,11 +172,9 @@
     <ClInclude Include="shaderLoader.h" />
     <ClInclude Include="shaderManager.h" />
     <ClInclude Include="spotLight.h" />
-    <ClInclude Include="square.h" />
     <ClInclude Include="subject.h" />
     <ClInclude Include="transformation.h" />
     <ClInclude Include="translation.h" />
-    <ClInclude Include="triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

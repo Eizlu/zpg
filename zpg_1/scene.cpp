@@ -77,6 +77,8 @@ void Scene::setLight(std::unique_ptr<Light> lgt)
 void Scene::draw( int windowWidth, int windowHeight)
 {
 	if (objects.empty()) return;
+	if (!camera) return;
+
 
 	for (auto& obj : objects) {
 		auto shader = obj->getShaderProgram();
@@ -98,5 +100,6 @@ void Scene::draw( int windowWidth, int windowHeight)
 		shader->setUniform("numLights", static_cast<int>(lights.size()));
 
 		obj->draw();
+		glUseProgram(0);
 	}
 }

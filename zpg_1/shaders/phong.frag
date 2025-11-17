@@ -12,14 +12,25 @@ struct Light {
     int enabled;
 };
 
+struct Material {
+    vec3 Ka;
+    vec3 Kd;
+    vec3 Ks;
+    float Ns;
+};
 
 in vec3 worldPos;
 in vec3 worldNorm;
+in vec2 texCoord;
 out vec4 fragColor;
 
 uniform Light lights[MAX_LIGHTS];
 uniform int numLights;
 uniform vec3 viewPos;  // Přidáno pro viewDir
+uniform Material material;
+
+uniform sampler2D diffuseMap;    // <-- textura
+uniform bool hasTexture;
 
 float calculateAttenuation(float distance, float attenuation) {
     if (attenuation <= 0.0) return 1.0;
@@ -29,43 +40,52 @@ float calculateAttenuation(float distance, float attenuation) {
 void main() {
     vec3 norm = normalize(worldNorm);
     vec3 viewDir = normalize(viewPos - worldPos);
-    vec4 ambient = vec4(0.1, 0.1, 0.1, 1.0);
-    vec4 objectColor = vec4(0.385, 0.647, 0.812, 1.0);
-    vec4 result = ambient * objectColor;
+    vec3 baseColor = material.Kd;
+    if (hasTexture) {
+        baseColor = texture(diffuseMap, texCoord).rgb;
+    }
+    vec3 result = vec3(0.0);
 
     for(int i = 0; i < numLights; i++) {
     if(lights[i].type == 0) { // ambient
-        result += vec4(0.1,0.1,0.1,1.0) * objectColor * vec4(lights[i].color,1.0);
+        result += baseColor * material.Ka * lights[i].color * lights[i].intensity;
         continue;
     }
 
     vec3 lightDir;
     float attenuation = 1.0;
+
     if(lights[i].type == 1) { // directional
         lightDir = normalize(-lights[i].direction);
-    } else if(lights[i].type == 2) { // point
-        lightDir = normalize(lights[i].position - worldPos);
-        float distance = length(lights[i].position - worldPos);
+    } 
+    else { // point nebo spot
+        vec3 toLight = lights[i].position - worldPos;
+        float distance = length(toLight);
+        lightDir = normalize(toLight);
         attenuation = calculateAttenuation(distance, lights[i].attenuation);
-    } else if(lights[i].type == 3) { // spot
-	if(lights[i].enabled == 0) continue;
-        lightDir = normalize(lights[i].position - worldPos);
-        float distance = length(lights[i].position - worldPos);
-        attenuation = calculateAttenuation(distance, lights[i].attenuation);
-        float theta = dot(lightDir, normalize(-lights[i].direction));
-        if(theta < lights[i].cutoff) continue;
+
+    	if(lights[i].type == 3) { // spot
+	    if(lights[i].enabled == 0)       // <---- TADY JE TVOJE CHYBĚJÍCÍ PODMÍNKA
+            continue;
+
+	    float theta = dot(lightDir, normalize(-lights[i].direction));
+            if(theta < lights[i].cutoff) continue;
+	}
     }
+    
 
     float NdotL = max(dot(norm, lightDir), 0.0);
+
+    vec3 diffuse = baseColor * material.Kd * NdotL * lights[i].color * lights[i].intensity * attenuation;
+
     vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir),0.0),32);
+    float specAngle = max(dot(viewDir, reflectDir), 0.0);
+    float specFactor = pow(specAngle, max(material.Ns, 1.0));
 
-    vec4 diffuse = vec4(NdotL * lights[i].color * lights[i].intensity * attenuation, 1.0);
-    vec4 specular = vec4(spec * lights[i].color * lights[i].intensity * attenuation, 1.0);
+    vec3 specular = material.Ks * specFactor * lights[i].color * lights[i].intensity * attenuation;
 
-    result += (diffuse + specular) * objectColor;
+    result += diffuse + specular;
     }
 
-
-    fragColor = result;
+    fragColor =  vec4(result, 1.0);
 }
