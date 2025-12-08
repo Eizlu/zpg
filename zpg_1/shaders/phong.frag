@@ -21,7 +21,7 @@ struct Material {
 
 in vec3 worldPos;
 in vec3 worldNorm;
-in vec2 texCoord;
+in vec2 textCoord;
 out vec4 fragColor;
 
 uniform Light lights[MAX_LIGHTS];
@@ -40,15 +40,21 @@ float calculateAttenuation(float distance, float attenuation) {
 void main() {
     vec3 norm = normalize(worldNorm);
     vec3 viewDir = normalize(viewPos - worldPos);
-    vec3 baseColor = material.Kd;
+    vec3 baseColor;
     if (hasTexture) {
-        baseColor = texture(diffuseMap, texCoord).rgb;
+        baseColor = texture(diffuseMap, textCoord).rgb;
+    }
+    else if (material.Kd != vec3(0.0)) {
+    	baseColor = material.Kd;
+    }
+    else {
+    	baseColor = vec3(0.8, 0.8, 0.8); // světle šedá
     }
     vec3 result = vec3(0.0);
 
     for(int i = 0; i < numLights; i++) {
     if(lights[i].type == 0) { // ambient
-        result += baseColor * material.Ka * lights[i].color * lights[i].intensity;
+        result += baseColor  * lights[i].color * lights[i].intensity;
         continue;
     }
 
@@ -76,7 +82,7 @@ void main() {
 
     float NdotL = max(dot(norm, lightDir), 0.0);
 
-    vec3 diffuse = baseColor * material.Kd * NdotL * lights[i].color * lights[i].intensity * attenuation;
+    vec3 diffuse = baseColor  * NdotL * lights[i].color * lights[i].intensity * attenuation;
 
     vec3 reflectDir = reflect(-lightDir, norm);
     float specAngle = max(dot(viewDir, reflectDir), 0.0);

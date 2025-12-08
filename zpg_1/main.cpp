@@ -9,8 +9,6 @@
 #include "application.h"
 
 
-
-
 int main() {
     // Pass width, height, title explicitly
     Application* app = new Application(1200, 800, "ZPG");

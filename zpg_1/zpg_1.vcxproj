@@ -156,6 +156,7 @@
     <ClInclude Include="ambientLight.h" />
     <ClInclude Include="application.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="customTransformation.h" />
     <ClInclude Include="directionalLight.h" />
     <ClInclude Include="observer.h" />
     <ClInclude Include="compositeTransformation.h" />

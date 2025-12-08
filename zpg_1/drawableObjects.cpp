@@ -25,26 +25,36 @@ void DrawableObject::translate(float x, float y, float z)
 
 void DrawableObject::scale(float sx, float sy, float sz)
 {
+	if (!compositeTransformation)
+		createCompositeTransformation();
 	compositeTransformation->addScale(sx, sy, sz);
 }
 
 void DrawableObject::scale(float uniformScale)
 {
+	if (!compositeTransformation)
+		createCompositeTransformation();
 	compositeTransformation->addScale(uniformScale);
 }
 
 void DrawableObject::rotate(float angle, const glm::vec3& axis)
 {
+	if (!compositeTransformation)
+		createCompositeTransformation();
 	compositeTransformation->addRotation(angle, axis);
 }
 
 void DrawableObject::rotateEuler(float angleX, float angleY, float angleZ)
 {
+	if (!compositeTransformation)
+		createCompositeTransformation();
 	compositeTransformation->addRotationEuler(angleX, angleY, angleZ);
 }
 
 void DrawableObject::rotateAroundPoint(const glm::vec3& point, float angle, const glm::vec3& axis)
 {
+	if (!compositeTransformation)
+		createCompositeTransformation();
 	compositeTransformation->addRotationAroundPoint(point, angle, axis);
 }
 
@@ -69,12 +79,15 @@ bool DrawableObject::hasCompositeTransformation() const
 	return compositeTransformation != nullptr;
 }
 
+//pøidaná úprava hodnoty uniform "w"
 void DrawableObject::draw()
 {
 	if (!shaderProgram || !compositeTransformation)
 		return;
 
 	shaderProgram->use();
+
+	shaderProgram->setUniform("w", 1.0f);
 
 	shaderProgram->setUniform("model", compositeTransformation->getMatrix());
 
@@ -87,6 +100,12 @@ void DrawableObject::draw()
 
 	glUseProgram(0);
 }
+
+//V 3D grafice se pro transformace objektù používají 4x4 matice. Abychom mohli jednoduše kombinovat tranclace, rotace a škálování, používáme homogenní
+// souøadnice (x,y,z,w), kde w je obvykle 1 pro body v prostoru. Po transformaci pøi perspektivní projekci se x, y, z vydìlí w, aby se získaly 
+// zpìt kartézské souøadnice. Tzn. Když se zvýší w, objekt vypadá menší, protože jeho x,y,z se zmenší po vydìlení vìtším w.
+//
+// V mé aplikaci jsem testovala rùzné kodnoty w, i vlastní matici s w=20, a objekty se škálují oèekávanì a perspektivní efekt funguje správnì.
 
 void DrawableObject::applyPhongShader()
 {

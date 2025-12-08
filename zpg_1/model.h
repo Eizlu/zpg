@@ -4,7 +4,7 @@
 #include <vector>
 #include "shaderProgram.h"
 
-//muze byt treba shapetype nabidka
+GLuint loadTextureFromFile(const std::string& path);
 
 class Model
 {
@@ -14,6 +14,7 @@ protected:
 	const float* externalVertices;
 	GLsizei externalVertexCount;
 	bool useExternalData;
+	bool hasTexture;
 public:
 	struct MaterialData {
 		glm::vec3 Ka = glm::vec3(0.1f); // ambient
@@ -27,10 +28,11 @@ public:
 	std::vector<MaterialData> materials;
 
 	Model();
-	Model(const float* vertices, GLsizei Count);
+	Model(const float* vertices, GLsizei Count, bool hasTexture);
 	Model(const char* objFileName);
 	virtual ~Model();
 	virtual void draw() const;
 
 	void applyMaterialToShader(ShaderProgram* shader) const;
+	void setTexture(GLuint textureID);
 };

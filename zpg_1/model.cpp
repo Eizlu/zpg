@@ -28,6 +28,17 @@ void Model::applyMaterialToShader(ShaderProgram* shader) const
     }
 }
 
+void Model::setTexture(GLuint textureID)
+{
+    if (materials.empty()) return;
+    {
+		materials.push_back(MaterialData());
+    }
+
+	materials[0].diffuseTexID = textureID;
+    materials[0].hasTexture = true;
+}
+
 GLuint loadTextureFromFile(const std::string& path) {
     int w, h, n;
     stbi_set_flip_vertically_on_load(true); // èasto potøeba
@@ -60,7 +71,7 @@ Model::Model() : VBO(0), VAO(0), vertexCount(0), useExternalData(false), externa
 {
 }
 
-Model::Model(const float* vertices, GLsizei Count) : VBO(0), VAO(0), vertexCount(0), useExternalData(true), externalVertices(vertices), externalVertexCount(Count)
+Model::Model(const float* vertices, GLsizei Count, bool hasTexture) : VBO(0), VAO(0), vertexCount(0), useExternalData(true), externalVertices(vertices), externalVertexCount(Count)
 {
     materials.clear();
     MaterialData def;
@@ -68,8 +79,10 @@ Model::Model(const float* vertices, GLsizei Count) : VBO(0), VAO(0), vertexCount
     def.Kd = glm::vec3(0.8f, 0.8f, 0.8f);
     def.Ks = glm::vec3(0.1f, 0.1f, 0.1f);
     def.Ns = 32.0f;
-    def.hasTexture = false;
+    def.hasTexture = hasTexture;
     materials.push_back(def);
+
+	const int stride = hasTexture ? 8 : 6;
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -78,13 +91,19 @@ Model::Model(const float* vertices, GLsizei Count) : VBO(0), VAO(0), vertexCount
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, externalVertexCount * sizeof(float), externalVertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glDisableVertexAttribArray(2);
+    if (hasTexture)
+    {
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+    }
+    else 
+        glDisableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -152,7 +171,6 @@ Model::Model(const char* name)
         mm.Ks = glm::vec3(m.specular[0], m.specular[1], m.specular[2]);
         mm.Ns = m.shininess > 0.0f ? m.shininess : 32.0f;
 
-        // ******** PØIDAT ********
         if (!m.diffuse_texname.empty()) {
             mm.diffuseTexName = base_dir + m.diffuse_texname;
             mm.diffuseTexID = loadTextureFromFile(mm.diffuseTexName);
@@ -196,3 +214,4 @@ void Model::draw() const
     glDrawArrays(GL_TRIANGLES, 0, vertexCount);
     glBindVertexArray(0);
 }
+

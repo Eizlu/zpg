@@ -149,5 +149,8 @@
     <ClInclude Include="shaderLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="customTransformation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
